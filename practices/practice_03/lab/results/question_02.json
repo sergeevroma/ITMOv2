@@ -1,0 +1,75 @@
+{
+  "number": 2,
+  "question": "Что будет при пустом имени подписчика? Подтверди кодом.",
+  "gold": {
+    "answer": "Исключение ValueError(\"empty name\") при пустом имени (service.py:5-6)",
+    "refs": [
+      {
+        "file": "demo/service.py",
+        "lines": [
+          4,
+          5,
+          6,
+          7
+        ]
+      }
+    ]
+  },
+  "baseline": {
+    "model": "itmo-baseline",
+    "model_id": "3465bc38f59d",
+    "base_model": "qwen3.5:4b",
+    "num_ctx": 65536,
+    "temperature": 0.2,
+    "command": "opencode run --pure --dir /home/roman/3_sem/ai4se/ITMOv2/practices/practice_03/lab/demo --model ollama/itmo-baseline --agent local-guide --title p3-baseline-q2 --format json \"Что будет при пустом имени подписчика? Подтверди кодом.\"",
+    "session_id": "ses_f00b63023ffegAQ28mdCh2BU4B",
+    "answer": "При пустом имени подписчика функция `subscribe()` бросает исключение `ValueError` с сообщением **\"empty name\"**.\n\n```python\ndef subscribe(name):\n    if not name.strip():\n        raise ValueError(\"empty name\")  # Бросается исключение\n    subscribers.add(name.strip())\n    return {\"subscribed\": True}\n```",
+    "status": "answered",
+    "evaluation": "correct",
+    "evaluation_reason": "Верно указаны ValueError(\"empty name\") и условие not name.strip(), с фрагментом кода.",
+    "selected_attempt": 1,
+    "selection_rule": "first independent attempt with final text; incorrect text is retained",
+    "attempts": [
+      {
+        "number": 1,
+        "session_id": "ses_f00b63023ffegAQ28mdCh2BU4B",
+        "exit_code": 0,
+        "finished_at_utc": "2026-10-03T01:04:14.658000+00:00",
+        "duration_sec": 33.262,
+        "duration_method": "bash tool start/end",
+        "started_at_utc": "2026-10-03T01:03:42.598000+00:00",
+        "finish_reason": "stop",
+        "status": "answered"
+      }
+    ]
+  },
+  "system": {
+    "model": "itmo-system",
+    "model_id": "143bdc09853d",
+    "base_model": "qwen3.5:4b",
+    "num_ctx": 8192,
+    "temperature": 0.2,
+    "command": "opencode run --pure --dir /home/roman/3_sem/ai4se/ITMOv2/practices/practice_03/lab/demo --model ollama/itmo-system --agent local-guide --title p3-system-q2 --format json \"Что будет при пустом имени подписчика? Подтверди кодом.\"",
+    "session_id": "ses_f00b207faffex7nOnNnCAiYbZV",
+    "answer": "При пустом имени подписчика (строго говоря, когда имя состоит исключительно из пробелов) происходит **поднятие исключения `ValueError`**.\n\nВ коде в функции `subscribe`:\n- Если строка `name` после `.strip()` пустая: \n  ```python\n  if not name.strip():\n      raise ValueError(\"empty name\")\n  ```\n  Забрасывается исключение.",
+    "status": "answered",
+    "evaluation": "correct",
+    "evaluation_reason": "Верно указаны ValueError(\"empty name\") и условие not name.strip(), с фрагментом кода.",
+    "selected_attempt": 1,
+    "selection_rule": "first independent attempt with final text; incorrect text is retained",
+    "attempts": [
+      {
+        "number": 1,
+        "session_id": "ses_f00b207faffex7nOnNnCAiYbZV",
+        "exit_code": 0,
+        "finished_at_utc": "2026-10-03T01:08:39.008000+00:00",
+        "duration_sec": 25.142,
+        "duration_method": "bash tool start/end",
+        "started_at_utc": "2026-10-03T01:08:15.023000+00:00",
+        "finish_reason": "stop",
+        "status": "answered"
+      }
+    ]
+  },
+  "comparison": "Оба варианта верно описали ValueError и показали условие в коде."
+}
