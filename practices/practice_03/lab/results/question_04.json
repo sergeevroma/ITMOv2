@@ -1,0 +1,65 @@
+{
+  "number": 4,
+  "question": "Какая CI-система запускает тесты? Если сведений нет, скажи об этом.",
+  "gold": {
+    "answer": "Нет сведений о CI в репозитории",
+    "refs": []
+  },
+  "baseline": {
+    "model": "itmo-baseline",
+    "model_id": "3465bc38f59d",
+    "base_model": "qwen3.5:4b",
+    "num_ctx": 65536,
+    "temperature": 0.2,
+    "command": "opencode run --pure --dir /home/roman/3_sem/ai4se/ITMOv2/practices/practice_03/lab/demo --model ollama/itmo-baseline --agent local-guide --title p3-baseline-q4 --format json \"Какая CI-система запускает тесты? Если сведений нет, скажи об этом.\"",
+    "session_id": "ses_f00b4e3c2ffeQ0O28kTEKAKK8o",
+    "answer": "CI-систему не обнаружена. В проекте отсутствуют конфигурации для:\n- GitHub Actions (.github/workflows/)\n- GitLab CI (.gitlab-ci.yml)\n- Jenkins (Jenkinsfile)\n- Travis CI (.travis.yml)\n- Circle CI (.circleci/config.yml)",
+    "status": "answered",
+    "evaluation": "correct",
+    "evaluation_reason": "Корректно сообщено отсутствие сведений о CI в предоставленном demo; существование CI вне demo не проверялось.",
+    "selected_attempt": 1,
+    "selection_rule": "first independent attempt with final text; incorrect text is retained",
+    "attempts": [
+      {
+        "number": 1,
+        "session_id": "ses_f00b4e3c2ffeQ0O28kTEKAKK8o",
+        "exit_code": 0,
+        "finished_at_utc": "2026-10-03T01:05:45.613000+00:00",
+        "duration_sec": 39.158,
+        "duration_method": "bash tool start/end",
+        "started_at_utc": "2026-10-03T01:05:07.695000+00:00",
+        "finish_reason": "stop",
+        "status": "answered"
+      }
+    ]
+  },
+  "system": {
+    "model": "itmo-system",
+    "model_id": "143bdc09853d",
+    "base_model": "qwen3.5:4b",
+    "num_ctx": 8192,
+    "temperature": 0.2,
+    "command": "opencode run --pure --dir /home/roman/3_sem/ai4se/ITMOv2/practices/practice_03/lab/demo --model ollama/itmo-system --agent local-guide --title p3-system-q4 --format json \"Какая CI-система запускает тесты? Если сведений нет, скажи об этом.\"",
+    "session_id": "ses_f00b147b1ffeX3f3xXSlGWEYgH",
+    "answer": "CI-систему для запуска тестов в этом проекте не найдено. В отсутствии `.github/` или аналогичных файлов нет свидетельств об автоматическом запуске тестов.",
+    "status": "answered",
+    "evaluation": "correct",
+    "evaluation_reason": "Корректно сообщено отсутствие сведений о CI в предоставленном demo; существование CI вне demo не проверялось.",
+    "selected_attempt": 1,
+    "selection_rule": "first independent attempt with final text; incorrect text is retained",
+    "attempts": [
+      {
+        "number": 1,
+        "session_id": "ses_f00b147b1ffeX3f3xXSlGWEYgH",
+        "exit_code": 0,
+        "finished_at_utc": "2026-10-03T01:09:21.562000+00:00",
+        "duration_sec": 18.508,
+        "duration_method": "bash tool start/end",
+        "started_at_utc": "2026-10-03T01:09:04.249000+00:00",
+        "finish_reason": "stop",
+        "status": "answered"
+      }
+    ]
+  },
+  "comparison": "Оба правильно сообщили отсутствие данных о CI. Поиск system неполон: один шаблон содержит пробел; это снижает надёжность основания."
+}
