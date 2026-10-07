@@ -1,0 +1,281 @@
+diff --git a/practices/practice_04/room_booking_project/app/api.py b/practices/practice_04/room_booking_project/app/api.py
+index 6c93e6c..d02a047 100644
+--- a/practices/practice_04/room_booking_project/app/api.py
++++ b/practices/practice_04/room_booking_project/app/api.py
+@@ -47,6 +47,31 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
+             raise HTTPException(status_code=404, detail="Booking not found")
+         return Response(status_code=204)
+ 
++    @application.get("/free-slots")
++    def get_free_slots(
++        date: str = Query(..., description="Дата в формате YYYY-MM-DD"),
++        duration_minutes: int = Query(
++            ...,
++            ge=30,
++            le=540,
++            multiple_of=30,
++            description="Длительность в минутах",
++        ),
++        room_id: int | None = Query(
++            default=None, description="Идентификатор комнаты (необязательно)"
++        ),
++    ) -> list[dict]:
++        try:
++            day = parse_date(date)
++        except ValueError as error:
++            # Явная ошибка валидации даты — возвращаем 422 как в других обработчиках
++            raise HTTPException(status_code=422, detail=str(error)) from error
++        if room_id is not None and room_id not in ROOM_IDS:
++            raise HTTPException(status_code=422, detail="Unknown room_id")
++        return storage.list_free_slots(
++            db_path, day.isoformat(), duration_minutes, room_id
++        )
++
+     return application
+ 
+ 
+diff --git a/practices/practice_04/room_booking_project/app/storage.py b/practices/practice_04/room_booking_project/app/storage.py
+index 37183e2..9208f3f 100644
+--- a/practices/practice_04/room_booking_project/app/storage.py
++++ b/practices/practice_04/room_booking_project/app/storage.py
+@@ -80,3 +80,77 @@ def delete_booking(path: Path, booking_id: int) -> bool:
+     with database(path) as connection:
+         cursor = connection.execute("DELETE FROM bookings WHERE id = ?", (booking_id,))
+         return cursor.rowcount == 1
++
++
++def list_free_slots(
++    path: Path, date: str, duration_minutes: int, room_id: int | None
++) -> list[dict]:
++    """Return all free time intervals for the given date and optional room.
++
++    Интервалы считаются полуоткрытыми: [start, end). Перебираем возможные
++    старты с шагом 30 минут в пределах рабочего дня 09:00–18:00 и исключаем
++    те, что пересекаются с существующими бронированиями той же комнаты и даты.
++    Результат отсортирован по началу и комнате.
++    """
++
++    def to_minutes(hhmm: str) -> int:
++        h, m = hhmm.split(":")
++        return int(h) * 60 + int(m)
++
++    def to_hhmm(minutes: int) -> str:
++        h = minutes // 60
++        m = minutes % 60
++        return f"{h:02d}:{m:02d}"
++
++    start_day = 9 * 60
++    end_day = 18 * 60
++
++    # Выбираем комнаты: одна указанная или все три
++    rooms = [room_id] if room_id is not None else [101, 102, 103]
++
++    # Загружаем расписание дня заранее и раскладываем по комнатам
++    by_room: dict[int, list[tuple[int, int]]] = {r: [] for r in rooms}
++    with database(path) as connection:
++        rows = connection.execute(
++            "SELECT room_id, start, end FROM bookings WHERE date = ?",
++            (date,),
++        ).fetchall()
++        for row in rows:
++            r = int(row["room_id"])
++            if r in by_room:
++                by_room[r].append((to_minutes(row["start"]), to_minutes(row["end"])) )
++
++    # Для устойчивости проверок пересечений отсортируем интервалы по началу
++    for r in by_room:
++        by_room[r].sort(key=lambda p: (p[0], p[1]))
++
++    result: list[dict] = []
++    last_start = end_day - duration_minutes
++    if last_start < start_day:
++        # Длительность не помещается в рабочий день — вариантов нет
++        return []
++
++    # Перебираем кандидаты по началу, внутри — комнаты по возрастанию
++    t = start_day
++    while t <= last_start:
++        candidate_end = t + duration_minutes
++        for r in sorted(rooms):
++            busy = False
++            for (b_start, b_end) in by_room.get(r, []):
++                # Пересечение: new_start < existing_end AND existing_start < new_end
++                if t < b_end and b_start < candidate_end:
++                    busy = True
++                    break
++            if not busy:
++                result.append(
++                    {
++                        "room_id": r,
++                        "date": date,
++                        "start": to_hhmm(t),
++                        "end": to_hhmm(candidate_end),
++                    }
++                )
++        t += 30
++
++    # Порядок уже по началу и комнате.
++    return result
+diff --git a/practices/practice_04/room_booking_project/tests/test_free_slots.py b/practices/practice_04/room_booking_project/tests/test_free_slots.py
+new file mode 100644
+index 0000000..7576b61
+--- /dev/null
++++ b/practices/practice_04/room_booking_project/tests/test_free_slots.py
+@@ -0,0 +1,157 @@
++from fastapi.testclient import TestClient
++import pytest
++
++from app.api import create_app
++
++DAY = "2099-10-12"
++
++
++@pytest.fixture
++def db_path(tmp_path):
++    return tmp_path / "data" / "bookings.sqlite3"
++
++
++@pytest.fixture
++def client(db_path):
++    with TestClient(create_app(db_path)) as session:
++        yield session
++
++
++def booking(**changes):
++    base = {
++        "room_id": 101,
++        "title": "Подготовка к практике",
++        "date": DAY,
++        "start": "10:00",
++        "end": "11:00",
++    }
++    return base | changes
++
++
++def has_slot(slots: list[dict], *, room_id: int, start: str, end: str) -> bool:
++    for slot in slots:
++        if (
++            slot["room_id"] == room_id
++            and slot["date"] == DAY
++            and slot["start"] == start
++            and slot["end"] == end
++        ):
++            return True
++    return False
++
++
++def test_free_slots_empty_day_all_rooms_60min(client):
++    response = client.get(
++        "/free-slots",
++        params={"date": DAY, "duration_minutes": 60},
++    )
++    assert response.status_code == 200
++    data = response.json()
++    # 09:00..18:00, шаг 30 минут, длительность 60 → последние допустимые старты до 17:00
++    # (540 - 60) / 30 + 1 = 17 стартов на комнату, 3 комнаты → 51 интервал
++    assert len(data) == 17 * 3
++    # Сортировка по началу и комнате
++    assert data[0] == {"room_id": 101, "date": DAY, "start": "09:00", "end": "10:00"}
++    assert data[1] == {"room_id": 102, "date": DAY, "start": "09:00", "end": "10:00"}
++    assert data[2] == {"room_id": 103, "date": DAY, "start": "09:00", "end": "10:00"}
++    assert data[-3] == {"room_id": 101, "date": DAY, "start": "17:00", "end": "18:00"}
++    assert data[-2] == {"room_id": 102, "date": DAY, "start": "17:00", "end": "18:00"}
++    assert data[-1] == {"room_id": 103, "date": DAY, "start": "17:00", "end": "18:00"}
++
++
++def test_free_slots_single_room_excludes_overlaps_and_keeps_neighbors(client):
++    # Занимаем в 101: 10:00–11:00 и 13:30–14:30
++    assert client.post("/bookings", json=booking()).status_code == 201
++    assert (
++        client.post("/bookings", json=booking(start="13:30", end="14:30")).status_code
++        == 201
++    )
++    response = client.get(
++        "/free-slots",
++        params={"date": DAY, "duration_minutes": 30, "room_id": 101},
++    )
++    assert response.status_code == 200
++    slots = response.json()
++    # Должны отсутствовать пересекающиеся варианты
++    assert not has_slot(slots, room_id=101, start="10:00", end="10:30")
++    assert not has_slot(slots, room_id=101, start="10:30", end="11:00")
++    assert not has_slot(slots, room_id=101, start="13:30", end="14:00")
++    assert not has_slot(slots, room_id=101, start="14:00", end="14:30")
++    # Соседние варианты разрешены
++    assert has_slot(slots, room_id=101, start="09:00", end="09:30")
++    assert has_slot(slots, room_id=101, start="09:30", end="10:00")
++    assert has_slot(slots, room_id=101, start="11:00", end="11:30")
++    assert has_slot(slots, room_id=101, start="14:30", end="15:00")
++    # Только выбранная комната
++    assert all(slot["room_id"] == 101 for slot in slots)
++
++
++def test_free_slots_all_rooms_and_single_room_difference(client):
++    # Занимаем 101: 10:00–11:00
++    assert client.post("/bookings", json=booking()).status_code == 201
++    # По всем комнатам есть варианты на 10:00–11:00 для 102 и 103
++    all_rooms = client.get(
++        "/free-slots",
++        params={"date": DAY, "duration_minutes": 60},
++    ).json()
++    assert has_slot(all_rooms, room_id=102, start="10:00", end="11:00")
++    assert has_slot(all_rooms, room_id=103, start="10:00", end="11:00")
++    # Для одной комнаты 101 этого варианта быть не должно
++    only_101 = client.get(
++        "/free-slots",
++        params={"date": DAY, "duration_minutes": 60, "room_id": 101},
++    ).json()
++    assert not has_slot(only_101, room_id=101, start="10:00", end="11:00")
++
++
++def test_free_slots_fully_booked_day_returns_empty(client):
++    # Полностью занимаем день во всех комнатах
++    for room in (101, 102, 103):
++        assert (
++            client.post(
++                "/bookings", json=booking(room_id=room, start="09:00", end="18:00")
++            ).status_code
++            == 201
++        )
++    response = client.get(
++        "/free-slots",
++        params={"date": DAY, "duration_minutes": 60},
++    )
++    assert response.status_code == 200
++    assert response.json() == []
++
++
++@pytest.mark.parametrize(
++    "params",
++    [
++        {},
++        {"date": DAY},
++        {"duration_minutes": 60},
++        {"date": "invalid", "duration_minutes": 60},
++        {"date": "2099-02-30", "duration_minutes": 60},
++        {"date": DAY, "duration_minutes": 0},
++        {"date": DAY, "duration_minutes": -30},
++        {"date": DAY, "duration_minutes": 25},
++        {"date": DAY, "duration_minutes": 541},
++        {"date": DAY, "duration_minutes": 60, "room_id": 999},
++    ],
++)
++def test_free_slots_invalid_input_is_rejected(client, params):
++    response = client.get("/free-slots", params=params)
++    assert response.status_code == 422
++
++
++def test_free_slots_does_not_modify_bookings(client):
++    # Создаём две записи
++    b1 = client.post("/bookings", json=booking(start="09:00", end="09:30")).json()
++    b2 = client.post("/bookings", json=booking(start="11:00", end="12:00")).json()
++    # Поиск свободных слотов
++    resp = client.get(
++        "/free-slots",
++        params={"date": DAY, "duration_minutes": 30},
++    )
++    assert resp.status_code == 200
++    # Расписание не изменилось
++    listed = client.get("/bookings", params={"date": DAY})
++    assert listed.status_code == 200
++    assert listed.json() == [b1, b2]

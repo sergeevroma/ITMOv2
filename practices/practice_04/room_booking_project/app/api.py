@@ -47,6 +47,31 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="Booking not found")
         return Response(status_code=204)
 
+    @application.get("/free-slots")
+    def get_free_slots(
+        date: str = Query(..., description="Дата в формате YYYY-MM-DD"),
+        duration_minutes: int = Query(
+            ...,
+            ge=30,
+            le=540,
+            multiple_of=30,
+            description="Длительность в минутах",
+        ),
+        room_id: int | None = Query(
+            default=None, description="Идентификатор комнаты (необязательно)"
+        ),
+    ) -> list[dict]:
+        try:
+            day = parse_date(date)
+        except ValueError as error:
+            # Явная ошибка валидации даты — возвращаем 422 как в других обработчиках
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        if room_id is not None and room_id not in ROOM_IDS:
+            raise HTTPException(status_code=422, detail="Unknown room_id")
+        return storage.list_free_slots(
+            db_path, day.isoformat(), duration_minutes, room_id
+        )
+
     return application
 
 
