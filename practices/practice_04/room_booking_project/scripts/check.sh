@@ -13,9 +13,9 @@ run_pytest() {
 
 run_ruff() {
     if [ -x .venv/bin/python ]; then
-        .venv/bin/python -m ruff check . ../.opencode/skills/booking-csv-audit/scripts --config ruff.toml
+        .venv/bin/python -m ruff check . ../.opencode/skills/booking-csv-audit/scripts ../mcp ../demo --config ruff.toml
     else
-        ruff check . ../.opencode/skills/booking-csv-audit/scripts --config ruff.toml
+        ruff check . ../.opencode/skills/booking-csv-audit/scripts ../mcp ../demo --config ruff.toml
     fi
 }
 

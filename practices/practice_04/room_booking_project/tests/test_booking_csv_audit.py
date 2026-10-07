@@ -30,7 +30,9 @@ def audit():
 @pytest.fixture
 def api(tmp_path, audit, monkeypatch):
     with TestClient(create_app(tmp_path / "audit.sqlite3")) as client:
-        payload = json.loads((EXAMPLES / "schedule.json").read_text())
+        payload = json.loads((
+            Path(__file__).resolve().parents[2] / "demo" / "schedule.json"
+        ).read_text())
         assert client.post("/bookings", json=payload).status_code == 201
 
         def open_request(request, timeout):

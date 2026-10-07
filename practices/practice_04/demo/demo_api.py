@@ -8,8 +8,8 @@ from tempfile import TemporaryDirectory
 
 import uvicorn
 
-SKILL_DIR = Path(__file__).resolve().parents[1]
-PROJECT_DIR = SKILL_DIR.parents[2] / "room_booking_project"
+DEMO_DIR = Path(__file__).resolve().parent
+PROJECT_DIR = DEMO_DIR.parent / "room_booking_project"
 
 
 def main():
@@ -23,7 +23,7 @@ def main():
 
     with TemporaryDirectory(prefix="roombook-audit-demo-") as folder:
         db_path = Path(folder) / "demo.sqlite3"
-        fixture = json.loads((SKILL_DIR / "examples" / "schedule.json").read_text())
+        fixture = json.loads((DEMO_DIR / "schedule.json").read_text())
         saved = add_booking(
             db_path, BookingInput.model_validate(fixture).model_dump(mode="json"),
         )

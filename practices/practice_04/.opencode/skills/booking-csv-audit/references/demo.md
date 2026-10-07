@@ -27,11 +27,11 @@ room_booking_project/.venv/bin/python .opencode/skills/booking-csv-audit/scripts
 Чтобы не запускать реальный сервер и базу данных, используется demo_api:
 
 ```sh
-room_booking_project/.venv/bin/python .opencode/skills/booking-csv-audit/scripts/demo_api.py
+room_booking_project/.venv/bin/python demo/demo_api.py
 ```
 
 Сервер на порту 8765 использует временную базу.
-В ней только бронирование из [schedule.json](../examples/schedule.json)
+В ней только бронирование из [schedule.json](../../../../demo/schedule.json).
 Пользовательская база не затрагивается; Ctrl+C останавливает сервер.
 
 Во втором терминале открывается OpenCode из `practice_04`:
