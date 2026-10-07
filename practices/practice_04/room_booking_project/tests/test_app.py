@@ -1,5 +1,5 @@
-import pytest
 from fastapi.testclient import TestClient
+import pytest
 
 from app.api import create_app
 
@@ -18,7 +18,14 @@ def client(db_path):
 
 
 def booking(**changes):
-    return {"room_id": 101, "title": "Подготовка к практике", "date": DAY, "start": "10:00", "end": "11:00"} | changes
+    base = {
+        "room_id": 101,
+        "title": "Подготовка к практике",
+        "date": DAY,
+        "start": "10:00",
+        "end": "11:00",
+    }
+    return base | changes
 
 
 def test_rooms(client):
@@ -47,7 +54,10 @@ def test_title_is_trimmed(client):
     response = client.post("/bookings", json=booking(title="  Практика 4  "))
     assert response.status_code == 201
     assert response.json()["title"] == "Практика 4"
-    assert client.get("/bookings", params={"date": DAY}).json()[0]["title"] == "Практика 4"
+    assert (
+        client.get("/bookings", params={"date": DAY}).json()[0]["title"]
+        == "Практика 4"
+    )
 
 
 def test_persists_between_application_instances(client, db_path):
@@ -70,7 +80,11 @@ def test_list_filters_date_and_sorts_by_room_and_start(client):
         response = client.post("/bookings", json=payload)
         assert response.status_code == 201
         saved.append(response.json())
-    assert client.get("/bookings", params={"date": DAY}).json() == [saved[2], saved[1], saved[0]]
+    assert client.get("/bookings", params={"date": DAY}).json() == [
+        saved[2],
+        saved[1],
+        saved[0],
+    ]
     assert client.get("/bookings", params={"date": "2099-10-13"}).json() == [saved[3]]
 
 
@@ -85,7 +99,9 @@ def test_delete_booking_and_missing_id(client):
     assert client.delete(f"/bookings/{booking_id}").status_code == 404
 
 
-@pytest.mark.parametrize("start,end", [("09:00", "09:30"), ("17:30", "18:00"), ("09:00", "18:00")])
+@pytest.mark.parametrize(
+    "start,end", [("09:00", "09:30"), ("17:30", "18:00"), ("09:00", "18:00")]
+)
 def test_working_hours_boundaries_are_valid(client, start, end):
     response = client.post("/bookings", json=booking(start=start, end=end))
     assert response.status_code == 201
@@ -126,7 +142,9 @@ def test_missing_booking_field_is_rejected(client, field):
     assert client.get("/bookings", params={"date": DAY}).json() == []
 
 
-@pytest.mark.parametrize("params", [{}, {"date": "invalid"}, {"date": "2099-02-30"}, {"date": "20991012"}])
+@pytest.mark.parametrize(
+    "params", [{}, {"date": "invalid"}, {"date": "2099-02-30"}, {"date": "20991012"}]
+)
 def test_list_requires_valid_date(client, params):
     assert client.get("/bookings", params=params).status_code == 422
 
@@ -151,7 +169,9 @@ def test_swagger_and_openapi_are_available(client):
     response = client.get("/openapi.json")
     assert response.status_code == 200
     assert response.json()["info"]["title"] == "RoomBook"
-    assert {"/rooms", "/bookings", "/bookings/{booking_id}"} <= response.json()["paths"].keys()
+    assert {"/rooms", "/bookings", "/bookings/{booking_id}"} <= response.json()[
+        "paths"
+    ].keys()
 
 
 # === Feature A: запрет пересечений ===
@@ -165,7 +185,9 @@ def test_conflict_partial_overlap_returns_409_and_does_not_save(client):
     # Частичное пересечение: 10:30–11:30
     response = client.post("/bookings", json=booking(start="10:30", end="11:30"))
     assert response.status_code == 409
-    assert response.json() == {"detail": {"reason": "overlap", "conflict_id": first["id"]}}
+    assert response.json() == {
+        "detail": {"reason": "overlap", "conflict_id": first["id"]}
+    }
     # Состав базы не меняется
     assert client.get("/bookings", params={"date": DAY}).json() == [first]
 
@@ -175,7 +197,9 @@ def test_conflict_nested_interval_returns_409(client):
     # Вложенный интервал внутри [10:00, 11:00): 10:30–11:00
     response = client.post("/bookings", json=booking(start="10:30", end="11:00"))
     assert response.status_code == 409
-    assert response.json() == {"detail": {"reason": "overlap", "conflict_id": first["id"]}}
+    assert response.json() == {
+        "detail": {"reason": "overlap", "conflict_id": first["id"]}
+    }
 
 
 def test_conflict_full_duplicate_returns_409(client):
@@ -183,7 +207,9 @@ def test_conflict_full_duplicate_returns_409(client):
     # Полный дубль 10:00–11:00
     response = client.post("/bookings", json=booking())
     assert response.status_code == 409
-    assert response.json() == {"detail": {"reason": "overlap", "conflict_id": first["id"]}}
+    assert response.json() == {
+        "detail": {"reason": "overlap", "conflict_id": first["id"]}
+    }
 
 
 def test_adjacent_intervals_are_allowed(client):
@@ -208,4 +234,6 @@ def test_same_time_other_room_or_date_are_allowed(client):
     # Для исходной даты список содержит обе комнаты
     assert client.get("/bookings", params={"date": DAY}).json() == [first, second]
     # Для другой даты — отдельный список
-    assert client.get("/bookings", params={"date": "2099-10-13"}).json() == [r_date.json()]
+    assert client.get("/bookings", params={"date": "2099-10-13"}).json() == [
+        r_date.json()
+    ]

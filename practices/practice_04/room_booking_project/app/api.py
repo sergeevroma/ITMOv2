@@ -10,7 +10,8 @@ DEFAULT_DB = Path(__file__).resolve().parents[1] / "data" / "roombook.sqlite3"
 
 
 def create_app(database_path: str | Path | None = None) -> FastAPI:
-    db_path = Path(database_path if database_path is not None else os.environ.get("ROOMBOOK_DB", DEFAULT_DB))
+    db_env = os.environ.get("ROOMBOOK_DB", DEFAULT_DB)
+    db_path = Path(database_path if database_path is not None else db_env)
     application = FastAPI(title="RoomBook", version="0.1.0")
 
     @application.get("/rooms", response_model=list[Room])

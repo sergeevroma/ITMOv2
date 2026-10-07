@@ -16,6 +16,7 @@ RoomBook использует Python, FastAPI и SQLite. Код проекта �
 | `room_booking_project/tests/` | Тесты публичного API |
 | `room_booking_project/scripts/check.sh` | Запуск проверки проекта |
 | `room_booking_project/requirements.txt` | Зависимости Python |
+| `room_booking_project/docs/style-guide.md` | Принятый style guide проекта |
 
 ## Контекст и требования
 

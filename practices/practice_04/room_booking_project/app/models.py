@@ -1,5 +1,5 @@
-import re
 from datetime import date as Date, time as Time
+import re
 from typing import Literal
 
 from pydantic import BaseModel, field_serializer, field_validator, model_validator
@@ -8,7 +8,9 @@ ROOM_IDS = (101, 102, 103)
 
 
 def parse_date(value: str) -> Date:
-    if not isinstance(value, str) or not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value):
+    if not isinstance(value, str) or not re.fullmatch(
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value
+    ):
         raise ValueError("Date must use YYYY-MM-DD format")
     return Date.fromisoformat(value)
 

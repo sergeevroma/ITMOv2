@@ -1,6 +1,6 @@
-import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
+import sqlite3
 
 
 @contextmanager
@@ -30,8 +30,17 @@ def database(path: Path):
 def add_booking(path: Path, booking: dict) -> dict:
     with database(path) as connection:
         cursor = connection.execute(
-            "INSERT INTO bookings (room_id, title, date, start, end) VALUES (?, ?, ?, ?, ?)",
-            (booking["room_id"], booking["title"], booking["date"], booking["start"], booking["end"]),
+            (
+                "INSERT INTO bookings (room_id, title, date, start, end) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
+            (
+                booking["room_id"],
+                booking["title"],
+                booking["date"],
+                booking["start"],
+                booking["end"],
+            ),
         )
         return {**booking, "id": cursor.lastrowid}
 
@@ -45,11 +54,13 @@ def list_bookings(path: Path, date: str) -> list[dict]:
         return [dict(row) for row in rows]
 
 
-def find_conflict(path: Path, room_id: int, date: str, start: str, end: str) -> dict | None:
-    """Return existing booking that overlaps [start, end) for same room and date or None.
+def find_conflict(
+    path: Path, room_id: int, date: str, start: str, end: str
+) -> dict | None:
+    """Return conflicting booking for the same room/date or None.
 
-    Интервалы считаются полуоткрытыми: [start, end).
-    Пересечение: new_start < existing_end AND existing_start < new_end.
+    Интервалы считаются полуоткрытыми: [start, end). Пересечение:
+    new_start < existing_end AND existing_start < new_end.
     """
     with database(path) as connection:
         row = connection.execute(
