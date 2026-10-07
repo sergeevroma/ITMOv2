@@ -152,3 +152,60 @@ def test_swagger_and_openapi_are_available(client):
     assert response.status_code == 200
     assert response.json()["info"]["title"] == "RoomBook"
     assert {"/rooms", "/bookings", "/bookings/{booking_id}"} <= response.json()["paths"].keys()
+
+
+# === Feature A: запрет пересечений ===
+# Тесты следуют правилам writing-good-tests.md: проверяем реальное поведение API,
+# ожидания заданы явно, без вычисления ожидаемого результата кодом приложения.
+
+
+def test_conflict_partial_overlap_returns_409_and_does_not_save(client):
+    # Базовая запись 10:00–11:00
+    first = client.post("/bookings", json=booking()).json()
+    # Частичное пересечение: 10:30–11:30
+    response = client.post("/bookings", json=booking(start="10:30", end="11:30"))
+    assert response.status_code == 409
+    assert response.json() == {"detail": {"reason": "overlap", "conflict_id": first["id"]}}
+    # Состав базы не меняется
+    assert client.get("/bookings", params={"date": DAY}).json() == [first]
+
+
+def test_conflict_nested_interval_returns_409(client):
+    first = client.post("/bookings", json=booking()).json()
+    # Вложенный интервал внутри [10:00, 11:00): 10:30–11:00
+    response = client.post("/bookings", json=booking(start="10:30", end="11:00"))
+    assert response.status_code == 409
+    assert response.json() == {"detail": {"reason": "overlap", "conflict_id": first["id"]}}
+
+
+def test_conflict_full_duplicate_returns_409(client):
+    first = client.post("/bookings", json=booking()).json()
+    # Полный дубль 10:00–11:00
+    response = client.post("/bookings", json=booking())
+    assert response.status_code == 409
+    assert response.json() == {"detail": {"reason": "overlap", "conflict_id": first["id"]}}
+
+
+def test_adjacent_intervals_are_allowed(client):
+    first = client.post("/bookings", json=booking()).json()
+    # Соседний интервал [11:00, 12:00) разрешён
+    response = client.post("/bookings", json=booking(start="11:00", end="12:00"))
+    assert response.status_code == 201
+    second = response.json()
+    assert client.get("/bookings", params={"date": DAY}).json() == [first, second]
+
+
+def test_same_time_other_room_or_date_are_allowed(client):
+    # 10:00–11:00 в 101
+    first = client.post("/bookings", json=booking()).json()
+    # Та же дата и время, другая комната 102 — разрешено
+    r_room = client.post("/bookings", json=booking(room_id=102))
+    assert r_room.status_code == 201
+    second = r_room.json()
+    # Та же комната и время, другая дата — разрешено
+    r_date = client.post("/bookings", json=booking(date="2099-10-13"))
+    assert r_date.status_code == 201
+    # Для исходной даты список содержит обе комнаты
+    assert client.get("/bookings", params={"date": DAY}).json() == [first, second]
+    # Для другой даты — отдельный список
+    assert client.get("/bookings", params={"date": "2099-10-13"}).json() == [r_date.json()]

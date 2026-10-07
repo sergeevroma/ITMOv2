@@ -45,6 +45,26 @@ def list_bookings(path: Path, date: str) -> list[dict]:
         return [dict(row) for row in rows]
 
 
+def find_conflict(path: Path, room_id: int, date: str, start: str, end: str) -> dict | None:
+    """Return existing booking that overlaps [start, end) for same room and date or None.
+
+    Интервалы считаются полуоткрытыми: [start, end).
+    Пересечение: new_start < existing_end AND existing_start < new_end.
+    """
+    with database(path) as connection:
+        row = connection.execute(
+            """
+            SELECT * FROM bookings
+            WHERE room_id = ? AND date = ?
+              AND ? < end AND start < ?
+            ORDER BY id
+            LIMIT 1
+            """,
+            (room_id, date, start, end),
+        ).fetchone()
+        return dict(row) if row else None
+
+
 def delete_booking(path: Path, booking_id: int) -> bool:
     with database(path) as connection:
         cursor = connection.execute("DELETE FROM bookings WHERE id = ?", (booking_id,))

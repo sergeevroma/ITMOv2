@@ -19,7 +19,18 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
 
     @application.post("/bookings", response_model=Booking, status_code=201)
     def create_booking(booking: BookingInput):
-        return storage.add_booking(db_path, booking.model_dump(mode="json"))
+        data = booking.model_dump(mode="json")
+        # Проверяем конфликт пересечения в той же комнате и дате
+        conflict = storage.find_conflict(
+            db_path, data["room_id"], data["date"], data["start"], data["end"]
+        )
+        if conflict is not None:
+            # Возвращаем 409 с понятной причиной и ID конфликтующего бронирования
+            raise HTTPException(
+                status_code=409,
+                detail={"reason": "overlap", "conflict_id": conflict["id"]},
+            )
+        return storage.add_booking(db_path, data)
 
     @application.get("/bookings", response_model=list[Booking])
     def get_bookings(date: str = Query(description="Дата в формате YYYY-MM-DD")):
