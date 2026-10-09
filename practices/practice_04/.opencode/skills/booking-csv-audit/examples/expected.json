@@ -1,0 +1,23 @@
+{
+  "clean": {
+    "status": "clean",
+    "summary": {"total_rows": 3, "invalid_rows": 0, "conflicting_rows": 0},
+    "invalid_rows": [],
+    "conflicts": []
+  },
+  "issues": {
+    "status": "issues_found",
+    "summary": {"total_rows": 4, "invalid_rows": 2, "conflicting_rows": 2},
+    "invalid_rows": [4, 5],
+    "conflicts": [
+      {"row": 2, "source": "csv", "other_row": 3},
+      {"row": 3, "source": "csv", "other_row": 2}
+    ]
+  },
+  "schedule-conflict": {
+    "status": "issues_found",
+    "summary": {"total_rows": 3, "invalid_rows": 0, "conflicting_rows": 1},
+    "invalid_rows": [],
+    "conflicts": [{"row": 2, "source": "schedule", "booking_id": 1}]
+  }
+}

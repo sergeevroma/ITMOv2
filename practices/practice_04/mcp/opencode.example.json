@@ -1,0 +1,15 @@
+{
+  "mcp": {
+    "roombook": {
+      "type": "local",
+      "command": [
+        "/home/roman/3_sem/ai4se/ITMOv2/practices/practice_04/room_booking_project/.venv/bin/python",
+        "/home/roman/3_sem/ai4se/ITMOv2/practices/practice_04/mcp/server.py"
+      ],
+      "environment": {
+        "ROOMBOOK_API_URL": "http://127.0.0.1:8765"
+      },
+      "enabled": true
+    }
+  }
+}

@@ -1,0 +1,323 @@
+diff --git a/AGENTS.md b/AGENTS.md
+index 3c3f1c1..7f8b0a2 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@
+ | `room_booking_project/tests/` | Тесты публичного API |
+ | `room_booking_project/scripts/check.sh` | Запуск проверки проекта |
+ | `room_booking_project/requirements.txt` | Зависимости Python |
++| `room_booking_project/docs/style-guide.md` | Принятый style guide проекта |
+ 
+diff --git a/room_booking_project/docs/style-guide.md b/room_booking_project/docs/style-guide.md
+new file mode 100644
+index 0000000..ab12cd3
+--- /dev/null
++++ b/room_booking_project/docs/style-guide.md
+@@
++# Style Guide — RoomBook
++
++Этот документ фиксирует минимально необходимый набор правил для проекта RoomBook, основанный на готовом коде и тестах. Каждое правило сопровождается способом проверки и примером.
++
++Правила ориентированы на быстрые проверки (pytest, Ruff) и ручной обзор только там, где это необходимо.
++
++1. Явные ошибки входа и конфликтов — через HTTPException с понятным detail
++
++- Проверка: pytest (поведенческие тесты), review для формулировок detail.
++- Требование: все ошибки пользовательского входа и бизнес-конфликты возвращаются через `HTTPException` с корректным `status_code` и JSON-совместимым `detail`. Для конфликтов бронирований — `{ "reason": "overlap", "conflict_id": <id> }`.
++- Пример (app/api.py):
++
++```python
++raise HTTPException(status_code=409, detail={"reason": "overlap", "conflict_id": conflict_id})
++```
++
++2. Полуоткрытые интервалы времени, проверка пересечений в хранилище
++
++- Проверка: pytest (функциональные тесты).
++- Требование: интервал — `[start, end)` с шагом 30 минут, границы 09:00–18:00. Проверка пересечений выполняется в уровне данных единым SQL-условием:
++  `new_start < existing_end AND existing_start < new_end`.
++- Пример (SQL):
++
++```sql
++WHERE room_id = ? AND date = ?
++  AND ? < end AND start < ?
++```
++
++3. Публичные обработчики — короткие, без логики форматирования данных
++
++- Проверка: review.
++- Требование: эндпоинты должны делегировать преобразование и проверки в модели (Pydantic) и слой хранилища; логика в обработчиках минимальна: парсинг входа, вызов слоя данных, возврат результата.
++- Пример (антипаттерн): сложные фильтры/сортировки/SQL в обработчике. Перенести в `storage.py`.
++
++4. Сортировки и сериализация — консистентные и детерминированные
++
++- Проверка: pytest (сравнение точного JSON), Ruff (упрощения выражений — W, I), review для спорных мест.
++- Требование: списки выдаются в детерминированном порядке (`room_id`, `start`, `id`), сериализация времени — в формате `HH:MM`.
++- Пример: `ORDER BY room_id, start, id` и `@field_serializer` для времени.
++
++5. Стиль кода Python — Ruff: базовый набор ошибок и форматирование импортов
++
++- Проверка: Ruff.
++- Требование: включить базовые правила ruff: E/F (ошибки/логические проблемы), I (imports), W (предупреждения). Исключить излишне шумные правила до принятия стайлгайда второй версии.
++- Пример: лишние/неупорядоченные импорты, пробелы, неиспользуемые переменные — фиксируются.
++
++---
++
++Памятка для тестов
++
++- Тесты называют конкретный баг/поведение.
++- Ожидания — литеральные, без вычисления ожидаемого значения кодом.
++- Тесты используют реальный API: `TestClient`, статус и JSON сравниваются целиком.
+
+diff --git a/room_booking_project/requirements.txt b/room_booking_project/requirements.txt
+index d84b4d9..e6f70f5 100644
+--- a/room_booking_project/requirements.txt
++++ b/room_booking_project/requirements.txt
+@@
+ fastapi==0.142.2
+ pydantic==2.13.5
+ uvicorn==0.54.0
+ pytest==9.1.1
+ httpx2==2.13.1
++ruff==0.6.9
+
+diff --git a/room_booking_project/ruff.toml b/room_booking_project/ruff.toml
+new file mode 100644
+index 0000000..6b88d2e
+--- /dev/null
++++ b/room_booking_project/ruff.toml
+@@
++[format]
++quote-style = "double"
++indent-style = "space"
++line-ending = "lf"
++
++[lint]
++select = [
++  "E", # pycodestyle errors
++  "F", # pyflakes
++  "W", # pycodestyle warnings
++  "I", # isort
++]
++ignore = [
++]
++
++[lint.isort]
++known-first-party = ["app"]
++combine-as-imports = true
++force-sort-within-sections = true
++order-by-type = true
+
+diff --git a/room_booking_project/scripts/check.sh b/room_booking_project/scripts/check.sh
+index 7b0d511..9a2c3c4 100755
+--- a/room_booking_project/scripts/check.sh
++++ b/room_booking_project/scripts/check.sh
+@@ -1,8 +1,26 @@
+-#!/bin/sh
+-set -eu
+-
+-cd "$(dirname "$0")/.."
+-if [ -x .venv/bin/python ]; then
+-    exec .venv/bin/python -m pytest -q "$@"
+-fi
+-exec python3 -m pytest -q "$@"
++#!/bin/sh
++set -eu
++
++cd "$(dirname "$0")/.."
++
++run_pytest() {
++    if [ -x .venv/bin/python ]; then
++        .venv/bin/python -m pytest -q "$@"
++    else
++        python3 -m pytest -q "$@"
++    fi
++}
++
++run_ruff() {
++    if [ -x .venv/bin/python ]; then
++        .venv/bin/python -m ruff check .
++    else
++        ruff check .
++    fi
++}
++
++run_pytest "$@"
++run_ruff
+
+diff --git a/.opencode/plugins/check-after-edit.js b/.opencode/plugins/check-after-edit.js
+new file mode 100644
+index 0000000..5edcab1
+--- /dev/null
++++ b/.opencode/plugins/check-after-edit.js
+@@
++/**
++ * OpenCode plugin: check-after-edit
++ *
++ * Запускает sh scripts/check.sh из каталога room_booking_project текущего worktree
++ * после изменений Python-файлов инструментами агента (edit/write/apply_patch).
++ * Выполняет проверки последовательно, с тайм-аутом 30 секунд.
++ * Возвращает PASS/FAIL, код завершения и вывод проверки в результате инструмента.
++ */
++
++/** @type {import('@opencode-ai/plugin').Plugin} */
++export default async ({ project, directory, client, $ }) => {
++  const isPython = (path) => path.endsWith('.py');
++
++  async function runChecks(cwd) {
++    const cmd = 'sh scripts/check.sh';
++    const timeoutMs = 30_000;
++    const workdir = `${cwd}/room_booking_project`;
++    const start = Date.now();
++    try {
++      const result = await $.bash(cmd, { cwd: workdir, timeout: timeoutMs });
++      const duration = Date.now() - start;
++      return { ok: result.code === 0, code: result.code, stdout: result.stdout, stderr: result.stderr, duration };
++    } catch (err) {
++      return { ok: false, code: err.code ?? 1, stdout: err.stdout ?? '', stderr: String(err.stderr ?? err.message ?? err), duration: Date.now() - start };
++    }
++  }
++
++  return {
++    async 'tool.execute.after'(input, output) {
++      const tool = input.tool;
++      const edited = output?.edited_files ?? [];
++      const wrote = output?.written_files ?? [];
++      const files = [...edited, ...wrote];
++      if (!files.some(isPython)) return;
++
++      const res = await runChecks(directory);
++      const summary = res.ok ? 'PASS' : 'FAIL';
++      // Поверх результата инструмента добавляем отчёт
++      output.check_after_edit = {
++        status: summary,
++        code: res.code,
++        duration_ms: res.duration,
++        stdout: res.stdout,
++        stderr: res.stderr,
++      };
++      if (!res.ok) {
++        // Сигнализируем о провале в явном виде
++        throw new Error(`check-after-edit: ${summary} (code ${res.code})`);
++      }
++    },
++  };
++};
+
+diff --git a/room_booking_project/app/api.py b/room_booking_project/app/api.py
+index 51f39f7..b055d8a 100644
+--- a/room_booking_project/app/api.py
++++ b/room_booking_project/app/api.py
+@@
+ def create_app(database_path: str | Path | None = None) -> FastAPI:
+-    db_path = Path(database_path if database_path is not None else os.environ.get("ROOMBOOK_DB", DEFAULT_DB))
++    db_env = os.environ.get("ROOMBOOK_DB", DEFAULT_DB)
++    db_path = Path(database_path if database_path is not None else db_env)
+
+diff --git a/room_booking_project/app/models.py b/room_booking_project/app/models.py
+index 6acaa1a..3570b89 100644
+--- a/room_booking_project/app/models.py
++++ b/room_booking_project/app/models.py
+@@
+-from datetime import date as Date, time as Time
+-from typing import Literal
+-import re
++from datetime import date as Date, time as Time
++import re
++from typing import Literal
+@@
+-    if not isinstance(value, str) or not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value):
++    if not isinstance(value, str) or not re.fullmatch(
++        r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value
++    ):
+         raise ValueError("Date must use YYYY-MM-DD format")
+
+diff --git a/room_booking_project/app/storage.py b/room_booking_project/app/storage.py
+index 9b91d0b..a6c4ee2 100644
+--- a/room_booking_project/app/storage.py
++++ b/room_booking_project/app/storage.py
+@@
++from contextlib import contextmanager
++from pathlib import Path
++import sqlite3
+@@
+        cursor = connection.execute(
+            (
+                "INSERT INTO bookings (room_id, title, date, start, end) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
+            (
+                booking["room_id"],
+                booking["title"],
+                booking["date"],
+                booking["start"],
+                booking["end"],
+            ),
+        )
+@@
+def find_conflict(
+    path: Path, room_id: int, date: str, start: str, end: str
+) -> dict | None:
+    """Return conflicting booking for the same room/date or None.
+
+    Интервалы считаются полуоткрытыми: [start, end). Пересечение:
+    new_start < existing_end AND existing_start < new_end.
+    """
+
+diff --git a/room_booking_project/tests/test_app.py b/room_booking_project/tests/test_app.py
+index 3a0c0f2..e2d3a4f 100644
+--- a/room_booking_project/tests/test_app.py
++++ b/room_booking_project/tests/test_app.py
+@@
++from fastapi.testclient import TestClient
++import pytest
++
++from app.api import create_app
+@@
++def booking(**changes):
++    base = {
++        "room_id": 101,
++        "title": "Подготовка к практике",
++        "date": DAY,
++        "start": "10:00",
++        "end": "11:00",
++    }
++    return base | changes
+@@
++    assert (
++        client.get("/bookings", params={"date": DAY}).json()[0]["title"]
++        == "Практика 4"
++    )
+@@
++    assert client.get("/bookings", params={"date": DAY}).json() == [
++        saved[2],
++        saved[1],
++        saved[0],
++    ]
+@@
++@pytest.mark.parametrize(
++    "start,end", [("09:00", "09:30"), ("17:30", "18:00"), ("09:00", "18:00")]
++)
+@@
++@pytest.mark.parametrize(
++    "params", [{}, {"date": "invalid"}, {"date": "2099-02-30"}, {"date": "20991012"}]
++)
+@@
++    assert {"/rooms", "/bookings", "/bookings/{booking_id}"} <= response.json()[
++        "paths"
++    ].keys()
+@@
++    assert response.json() == {
++        "detail": {"reason": "overlap", "conflict_id": first["id"]}
++    }
+@@
++    assert response.json() == {
++        "detail": {"reason": "overlap", "conflict_id": first["id"]}
++    }
+@@
++    assert response.json() == {
++        "detail": {"reason": "overlap", "conflict_id": first["id"]}
++    }
+@@
++    assert client.get("/bookings", params={"date": "2099-10-13"}).json() == [
++        r_date.json()
++    ]

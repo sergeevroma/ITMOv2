@@ -1,0 +1,116 @@
+diff --git a/room_booking_project/app/api.py b/room_booking_project/app/api.py
+index 295c6da..e63a7d8 100644
+--- a/room_booking_project/app/api.py
++++ b/room_booking_project/app/api.py
+@@ -18,9 +18,18 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
+         return [{"id": room_id, "name": f"Комната {room_id}"} for room_id in ROOM_IDS]
+ 
+     @application.post("/bookings", response_model=Booking, status_code=201)
+     def create_booking(booking: BookingInput):
+-        return storage.add_booking(db_path, booking.model_dump(mode="json"))
++        data = booking.model_dump(mode="json")
++        # Проверяем конфликт пересечения в той же комнате и дате
++        conflict = storage.find_conflict(
++            db_path, data["room_id"], data["date"], data["start"], data["end"]
++        )
++        if conflict is not None:
++            # Возвращаем 409 с понятной причиной и ID конфликтующего бронирования
++            raise HTTPException(
++                status_code=409,
++                detail={"reason": "overlap", "conflict_id": conflict["id"]},
++            )
++        return storage.add_booking(db_path, data)
+diff --git a/room_booking_project/app/storage.py b/room_booking_project/app/storage.py
+index 8369af8..2a6d0b6 100644
+--- a/room_booking_project/app/storage.py
++++ b/room_booking_project/app/storage.py
+@@ -44,8 +44,29 @@ def list_bookings(path: Path, date: str) -> list[dict]:
+         ).fetchall()
+         return [dict(row) for row in rows]
+ 
+ 
++def find_conflict(path: Path, room_id: int, date: str, start: str, end: str) -> dict | None:
++    """Return existing booking that overlaps [start, end) for same room and date or None.
++
++    Интервалы считаются полуоткрытыми: [start, end).
++    Пересечение: new_start < existing_end AND existing_start < new_end.
++    """
++    with database(path) as connection:
++        row = connection.execute(
++            """
++            SELECT * FROM bookings
++            WHERE room_id = ? AND date = ?
++              AND ? < end AND start < ?
++            ORDER BY id
++            LIMIT 1
++            """,
++            (room_id, date, start, end),
++        ).fetchone()
++        return dict(row) if row else None
++
++
+diff --git a/room_booking_project/tests/test_app.py b/room_booking_project/tests/test_app.py
+index a134be2..0546bd7 100644
+--- a/room_booking_project/tests/test_app.py
++++ b/room_booking_project/tests/test_app.py
+@@ -151,3 +151,58 @@ def test_swagger_and_openapi_are_available(client):
+     assert response.status_code == 200
+     assert response.json()["info"]["title"] == "RoomBook"
+     assert {"/rooms", "/bookings", "/bookings/{booking_id}"} <= response.json()["paths"].keys()
+
+
++# === Feature A: запрет пересечений ===
++# Тесты следуют правилам writing-good-tests.md: проверяем реальное поведение API,
++# ожидания заданы явно, без вычисления ожидаемого результата кодом приложения.
++
++
++def test_conflict_partial_overlap_returns_409_and_does_not_save(client):
++    # Базовая запись 10:00–11:00
++    first = client.post("/bookings", json=booking()).json()
++    # Частичное пересечение: 10:30–11:30
++    response = client.post("/bookings", json=booking(start="10:30", end="11:30"))
++    assert response.status_code == 409
++    assert response.json() == {"detail": {"reason": "overlap", "conflict_id": first["id"]}}
++    # Состав базы не меняется
++    assert client.get("/bookings", params={"date": DAY}).json() == [first]
++
++
++def test_conflict_nested_interval_returns_409(client):
++    first = client.post("/bookings", json=booking()).json()
++    # Вложенный интервал внутри [10:00, 11:00): 10:30–11:00
++    response = client.post("/bookings", json=booking(start="10:30", end="11:00"))
++    assert response.status_code == 409
++    assert response.json() == {"detail": {"reason": "overlap", "conflict_id": first["id"]}}
++
++
++def test_conflict_full_duplicate_returns_409(client):
++    first = client.post("/bookings", json=booking()).json()
++    # Полный дубль 10:00–11:00
++    response = client.post("/bookings", json=booking())
++    assert response.status_code == 409
++    assert response.json() == {"detail": {"reason": "overlap", "conflict_id": first["id"]}}
++
++
++def test_adjacent_intervals_are_allowed(client):
++    first = client.post("/bookings", json=booking()).json()
++    # Соседний интервал [11:00, 12:00) разрешён
++    response = client.post("/bookings", json=booking(start="11:00", end="12:00"))
++    assert response.status_code == 201
++    second = response.json()
++    assert client.get("/bookings", params={"date": DAY}).json() == [first, second]
++
++
++def test_same_time_other_room_or_date_are_allowed(client):
++    # 10:00–11:00 в 101
++    first = client.post("/bookings", json=booking()).json()
++    # Та же дата и время, другая комната 102 — разрешено
++    r_room = client.post("/bookings", json=booking(room_id=102))
++    assert r_room.status_code == 201
++    second = r_room.json()
++    # Та же комната и время, другая дата — разрешено
++    r_date = client.post("/bookings", json=booking(date="2099-10-13"))
++    assert r_date.status_code == 201
++    # Для исходной даты список содержит обе комнаты
++    assert client.get("/bookings", params={"date": DAY}).json() == [first, second]
++    # Для другой даты — отдельный список
++    assert client.get("/bookings", params={"date": "2099-10-13"}).json() == [r_date.json()]

@@ -1,0 +1,38 @@
+{
+  "tool": "find_free_slots",
+  "transport": "stdio",
+  "success": {
+    "arguments": {
+      "date": "2099-10-12",
+      "duration_minutes": 60,
+      "room_id": 103
+    },
+    "isError": false,
+    "count": 14,
+    "first_slots": [
+      {
+        "room_id": 103,
+        "date": "2099-10-12",
+        "start": "09:00",
+        "end": "10:00"
+      },
+      {
+        "room_id": 103,
+        "date": "2099-10-12",
+        "start": "11:00",
+        "end": "12:00"
+      }
+    ],
+    "matches_http_api": true
+  },
+  "invalid_input": {
+    "arguments": {
+      "date": "2099-10-12",
+      "duration_minutes": 0,
+      "room_id": 103
+    },
+    "isError": true,
+    "message": "Error executing tool find_free_slots: API RoomBook вернул HTTP 422: {\"detail\":[{\"type\":\"greater_than_equal\",\"loc\":[\"query\",\"duration_minutes\"],\"msg\":\"Input should be greater than or equal to 30\",\"input\":\"0\",\"ctx\":{\"ge\":30}}]}"
+  },
+  "bookings_unchanged": true
+}
