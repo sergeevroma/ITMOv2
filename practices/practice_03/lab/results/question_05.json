@@ -1,0 +1,178 @@
+{
+  "number": 5,
+  "question": "Сохраняются ли подписки после перезапуска процесса? Подтверди кодом.",
+  "gold": {
+    "answer": "Подписки хранятся в памяти процесса, не сохраняются между перезапусками (README.md:2; service.py:1)",
+    "refs": [
+      {
+        "file": "demo/README.md",
+        "lines": [
+          2
+        ]
+      },
+      {
+        "file": "demo/service.py",
+        "lines": [
+          1
+        ]
+      }
+    ]
+  },
+  "baseline": {
+    "model": "itmo-baseline",
+    "model_id": "3465bc38f59d",
+    "base_model": "qwen3.5:4b",
+    "num_ctx": 65536,
+    "temperature": 0.2,
+    "command": "opencode run --pure --dir /home/roman/3_sem/ai4se/ITMOv2/practices/practice_03/lab/demo --model ollama/itmo-baseline --agent local-guide --title p3-baseline-q5b --format json \"Сохраняются ли подписки после перезапуска процесса? Подтверди кодом.\"",
+    "session_id": "ses_f00aac58affe7IPTrWfBFdCC0t",
+    "answer": "Да, подписки сохраняются после перезапуска.",
+    "status": "answered",
+    "evaluation": "incorrect",
+    "evaluation_reason": "Ответ утверждает сохранение подписок, но service.py:1 создаёт множество в памяти, а README.md:2 подтверждает хранение в процессе; основание кодом не приведено.",
+    "selected_attempt": 2,
+    "selection_rule": "first independent attempt with final text; incorrect text is retained",
+    "attempts": [
+      {
+        "number": 1,
+        "session_id": "ses_f00b43b95ffeJfy4zwQmhM0Ush",
+        "exit_code": 0,
+        "finished_at_utc": "2026-10-03T01:06:07.569000+00:00",
+        "duration_sec": 18.063,
+        "duration_method": "bash tool start/end",
+        "started_at_utc": "2026-10-03T01:05:50.744000+00:00",
+        "finish_reason": "stop",
+        "status": "no_final_answer"
+      },
+      {
+        "number": 2,
+        "session_id": "ses_f00aac58affe7IPTrWfBFdCC0t",
+        "exit_code": 0,
+        "finished_at_utc": "2026-10-03T01:16:17.620000+00:00",
+        "duration_sec": 8.103,
+        "duration_method": "bash tool start/end",
+        "started_at_utc": "2026-10-03T01:16:10.793000+00:00",
+        "finish_reason": "stop",
+        "status": "answered"
+      }
+    ]
+  },
+  "system": {
+    "model": "itmo-system",
+    "model_id": "143bdc09853d",
+    "base_model": "qwen3.5:4b",
+    "num_ctx": 8192,
+    "temperature": 0.2,
+    "command": "OPENCODE_CONFIG_CONTENT='{\"provider\":{\"ollama\":{\"models\":{\"itmo-system\":{\"options\":{\"reasoningEffort\":\"none\"}}}}}}' opencode run --pure --dir /home/roman/3_sem/ai4se/ITMOv2/practices/practice_03/lab/demo --model ollama/itmo-system --agent local-guide --title p3-system-q5-thinking-off --format json 'Сохраняются ли подписки после перезапуска процесса? Подтверди кодом.'",
+    "session_id": "ses_f00860d3affewwt5qtqgN7t9DO",
+    "answer": "Проще говоря, на примере с Java и Spring Data JPA подписки автоматически сохраняются в базу данных. Это происходит при каждом создании или обновлении записи через репозиторий `SubscriptionRepository`.\n\n```java\n// При новом создании заказа подписка сохраняется\nsubscriptionRepo.save(new Subscription(user, order));\n\n// При изменении статуса заказа подписка тоже обновляется\nsub = subscriptionRepo.findById(id).get(); // находим существующую\nsub.setStatus(\"ACTIVE\");\nsubscriptionRepo.save(sub);              // сохраняем изменения\n```",
+    "status": "answered",
+    "evaluation": "incorrect",
+    "evaluation_reason": "Ответ описывает Java/Spring Data JPA и SubscriptionRepository, которых нет в demo. В Python-проекте subscribers=set() хранится в памяти; сохранение на диск или в БД не реализовано. Файлы перед ответом не читались.",
+    "selected_attempt": 6,
+    "selection_rule": "First observed final text; this selected response is diagnostic because reasoningEffort was temporarily set to none.",
+    "attempts": [
+      {
+        "number": 1,
+        "session_id": "ses_f00b0f0eeffetFDIzAP1Db2OtG",
+        "exit_code": 0,
+        "finished_at_utc": "2026-10-03T01:09:50.037000+00:00",
+        "duration_sec": 24.8,
+        "duration_method": "bash tool start/end",
+        "started_at_utc": "2026-10-03T01:09:26.462000+00:00",
+        "finish_reason": "stop",
+        "status": "no_final_answer"
+      },
+      {
+        "number": 2,
+        "session_id": "ses_f00a4f5faffehnKO8qfsQYo6Jn",
+        "exit_code": 0,
+        "finished_at_utc": "2026-10-03T01:22:54.399000+00:00",
+        "duration_sec": 22.8,
+        "duration_method": "OpenCode user message to final assistant completion",
+        "started_at_utc": "2026-10-03T01:22:31.599000+00:00",
+        "finish_reason": "stop",
+        "status": "no_final_answer"
+      },
+      {
+        "number": 3,
+        "session_id": "ses_f00a232d8ffekdrBimb4OYiNdD",
+        "exit_code": 0,
+        "finished_at_utc": "2026-10-03T01:25:44.401000+00:00",
+        "duration_sec": 11.775,
+        "duration_method": "OpenCode user message to final assistant completion",
+        "started_at_utc": "2026-10-03T01:25:32.626000+00:00",
+        "finish_reason": "stop",
+        "status": "no_final_answer"
+      },
+      {
+        "number": 4,
+        "session_id": "ses_f0088e727ffekfWBB6xbFxHaNq",
+        "exit_code": 0,
+        "started_at_utc": "2026-10-03T01:53:10.401000+00:00",
+        "finished_at_utc": "2026-10-03T01:53:36.076000+00:00",
+        "duration_sec": 25.675,
+        "duration_method": "OpenCode user message to final assistant completion",
+        "finish_reason": "stop",
+        "status": "no_final_answer",
+        "experiment_type": "original_prompt_repeat",
+        "command": "opencode run --pure --dir /home/roman/3_sem/ai4se/ITMOv2/practices/practice_03/lab/demo --model ollama/itmo-system --agent local-guide --title p3-system-q5-retry4 --format json 'Сохраняются ли подписки после перезапуска процесса? Подтверди кодом.'"
+      },
+      {
+        "number": 5,
+        "session_id": "ses_f00878642ffeGBZh13n1JeiuHf",
+        "exit_code": 0,
+        "started_at_utc": "2026-10-03T01:54:40.755000+00:00",
+        "finished_at_utc": "2026-10-03T01:54:50.056000+00:00",
+        "duration_sec": 9.301,
+        "duration_method": "OpenCode user message to final assistant completion",
+        "finish_reason": "stop",
+        "status": "no_final_answer",
+        "experiment_type": "clarified_prompt",
+        "command": "opencode run --pure --dir /home/roman/3_sem/ai4se/ITMOv2/practices/practice_03/lab/demo --model ollama/itmo-system --agent local-guide --title p3-system-q5-diagnostic --format json 'Сохраняются ли подписки после перезапуска процесса? Подтверди кодом. Прочитай README.md и service.py в текущем проекте, затем дай финальный ответ со ссылкой на код. Не ограничивайся планом чтения файлов.'",
+        "prompt": "Сохраняются ли подписки после перезапуска процесса? Подтверди кодом. Прочитай README.md и service.py в текущем проекте, затем дай финальный ответ со ссылкой на код. Не ограничивайся планом чтения файлов."
+      },
+      {
+        "number": 6,
+        "session_id": "ses_f00860d3affewwt5qtqgN7t9DO",
+        "exit_code": 0,
+        "started_at_utc": "2026-10-03T01:56:17.263000+00:00",
+        "finished_at_utc": "2026-10-03T01:56:25.297000+00:00",
+        "duration_sec": 8.034,
+        "duration_method": "OpenCode user message to final assistant completion",
+        "finish_reason": "stop",
+        "status": "answered",
+        "experiment_type": "reasoning_disabled",
+        "command": "OPENCODE_CONFIG_CONTENT='{\"provider\":{\"ollama\":{\"models\":{\"itmo-system\":{\"options\":{\"reasoningEffort\":\"none\"}}}}}}' opencode run --pure --dir /home/roman/3_sem/ai4se/ITMOv2/practices/practice_03/lab/demo --model ollama/itmo-system --agent local-guide --title p3-system-q5-thinking-off --format json 'Сохраняются ли подписки после перезапуска процесса? Подтверди кодом.'",
+        "runtime_config_override": {
+          "provider": {
+            "ollama": {
+              "models": {
+                "itmo-system": {
+                  "options": {
+                    "reasoningEffort": "none"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "selected_experiment_type": "reasoning_disabled",
+    "runtime_config_override": {
+      "provider": {
+        "ollama": {
+          "models": {
+            "itmo-system": {
+              "options": {
+                "reasoningEffort": "none"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "comparison": "Baseline при повторе дал неверный ответ. System с исходными настройками не дал финального ответа в четырёх попытках; уточнение запроса также не помогло. Диагностический запуск с reasoningEffort=none дал финальный, но неверный ответ про Java/Spring Data JPA. Условия этого ответа отличаются от основной серии."
+}
