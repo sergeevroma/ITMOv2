@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pantry Planner</title>
+    <style>
+      body { font-family: sans-serif; margin: 1rem; }
+      .field { margin-bottom: .75rem; }
+      .error { color: #b00020; font-size: .9rem; }
+      textarea, input[type=text] { width: 100%; max-width: 640px; }
+      details { margin-top: .25rem; }
+      .muted { color: #555; }
+    </style>
+  </head>
+  <body>
+    <h1>Pantry Planner</h1>
+
+    <form method="post" action="/">
+      <div class="field">
+        <label>pantry</label><br>
+        <textarea name="pantry" rows="4" placeholder="egg, milk, salt">{{ form.pantry }}</textarea>
+        {% if errors.pantry %}<div class="error">{{ errors.pantry | safe }}</div>{% endif %}
+        <div class="muted">Ввод через запятые и/или с новой строки</div>
+      </div>
+
+      <div class="field">
+        <label>limit</label><br>
+        <input type="text" name="limit" value="{{ form.limit }}" placeholder="10">
+        {% if errors.limit %}<div class="error">{{ errors.limit | safe }}</div>{% endif %}
+      </div>
+
+      <div class="field">
+        <label>allow_missing</label><br>
+        <input type="text" name="allow_missing" value="{{ form.allow_missing }}" placeholder="0">
+        {% if errors.allow_missing %}<div class="error">{{ errors.allow_missing | safe }}</div>{% endif %}
+      </div>
+
+      <div class="field">
+        <label>diet_tags</label><br>
+        <input type="text" name="diet_tags" value="{{ form.diet_tags }}" placeholder="vegetarian,breakfast">
+      </div>
+
+      <div class="field">
+        <label>max_cost</label><br>
+        <input type="text" name="max_cost" value="{{ form.max_cost }}" placeholder="например 5.5">
+        {% if errors.max_cost %}<div class="error">{{ errors.max_cost | safe }}</div>{% endif %}
+      </div>
+
+      <div class="field">
+        <label><input type="checkbox" name="use_substitutions" {% if form.use_substitutions %}checked{% endif %}> use_substitutions</label>
+      </div>
+
+      <div class="field">
+        <button type="submit">Submit</button>
+      </div>
+    </form>
+
+    {% if submitted and not errors %}
+      <hr>
+      <h2>Результаты</h2>
+      {% if recipes is not none and recipes|length > 0 %}
+        <ol>
+          {% for r in recipes %}
+            <li>
+              <strong>{{ r.name }}</strong> — score: {{ r.score }}, cost: {{ r.cost }}<br>
+              <span class="muted">tags: {{ r.tags|join(', ') }}</span>
+              <details>
+                <summary>Состав</summary>
+                <div>ingredients: {{ r.ingredients|join(', ') }}</div>
+                <div>missing: {% if r.missing|length == 0 %}—{% else %}{{ r.missing|join(', ') }}{% endif %}</div>
+                <div>used_substitutions: {% if r.used_substitutions|length == 0 %}—{% else %}{{ r.used_substitutions|join(', ') }}{% endif %}</div>
+              </details>
+            </li>
+          {% endfor %}
+        </ol>
+      {% else %}
+        <div>Нет подходящих рецептов</div>
+      {% endif %}
+    {% endif %}
+  </body>
+  </html>
