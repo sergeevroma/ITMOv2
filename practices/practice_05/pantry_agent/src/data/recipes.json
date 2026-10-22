@@ -1,0 +1,10 @@
+[
+  {"name": "Omelet", "ingredients": ["egg", "milk", "salt"]},
+  {"name": "Pancakes", "ingredients": ["flour", "milk", "egg", "sugar", "salt"]},
+  {"name": "Tomato Salad", "ingredients": ["tomato", "cucumber", "olive oil", "salt"]},
+  {"name": "Grilled Cheese", "ingredients": ["bread", "cheese", "butter"]},
+  {"name": "Fried Rice", "ingredients": ["rice", "egg", "soy sauce", "oil"]},
+  {"name": "Mashed Potatoes", "ingredients": ["potato", "butter", "milk", "salt"]},
+  {"name": "Fruit Salad", "ingredients": ["apple", "banana", "orange"]},
+  {"name": "Pasta Aglio e Olio", "ingredients": ["pasta", "garlic", "olive oil", "salt"]}
+]
