@@ -1,0 +1,19 @@
+ID: I-07_E-02
+Actor: alice
+When: 20261027T191223Z UTC
+Request: GET /reviews/view
+Request-Headers:
+  Content-Type: application/json
+  X-Token: 7993e6f3e3304fd49e7770ab4fff5064
+Request-Body: 
+Response-Status: 200
+Response-Headers:
+  Server: BaseHTTP/0.6 Python/3.14.4
+  Date: Tue, 27 Oct 2026 19:12:23 GMT
+  Content-Type: text/html; charset=utf-8
+  Content-Length: 1046
+Response-Body:
+<html><body><p>r20</p><p>r21</p><p>r22</p><p>r23</p><p>r24</p><p>r25</p><p>r26</p><p>r27</p><p>r28</p><p>r29</p><p>r30</p><p>r31</p><p>r32</p><p>r33</p><p>r34</p><p>r35</p><p>r36</p><p>r37</p><p>r38</p><p>r39</p><p>r40</p><p>r41</p><p>r42</p><p>r43</p><p>r44</p><p>r45</p><p>r46</p><p>r47</p><p>r48</p><p>r49</p><p>r50</p><p>r51</p><p>r52</p><p>r53</p><p>r54</p><p>r55</p><p>r56</p><p>r57</p><p>r58</p><p>r59</p><p>r60</p><p>r61</p><p>r62</p><p>r63</p><p>r64</p><p>r65</p><p>r66</p><p>r67</p><p>r68</p><p>r69</p><p>r70</p><p>r71</p><p>r72</p><p>r73</p><p>r74</p><p>r75</p><p>r76</p><p>r77</p><p>r78</p><p>r79</p><p>r80</p><p>r81</p><p>r82</p><p>r83</p><p>r84</p><p>r85</p><p>r86</p><p>r87</p><p>r88</p><p>r89</p><p>r90</p><p>r91</p><p>r92</p><p>r93</p><p>r94</p><p>r95</p><p>r96</p><p>r97</p><p>r98</p><p>r99</p><p>r100</p><p>r101</p><p>r102</p><p>r103</p><p>r104</p><p>r105</p><p>r106</p><p>r107</p><p>r108</p><p>r109</p><p>r110</p><p>r111</p><p>r112</p><p>r113</p><p>r114</p><p>r115</p><p>r116</p><p>r117</p><p>r118</p><p>r119</p></body></html>
+
+Parsed-Effect:
+contains_script_tag=False

@@ -1,0 +1,17 @@
+{
+  "positive_own_receipt": true,
+  "I-04_foreign_receipt_guest": true,
+  "I-04_traversal_private": true,
+  "I-02_foreign_profile_alice": true,
+  "I-08_search_guest": true,
+  "I-05_profile_sql": true,
+  "positive_search_control": true,
+  "I-05_search_sql": true,
+  "I-05_context_sql": true,
+  "S-01_client_spoof": true,
+  "E-01_execute_export_client": true,
+  "T-01_price_override": true,
+  "I-01_token_in_logs": true,
+  "S-02_leaked_token_chain": true,
+  "I-09_input_error_details": true
+}
