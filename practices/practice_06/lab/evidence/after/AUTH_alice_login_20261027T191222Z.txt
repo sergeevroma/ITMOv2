@@ -1,0 +1,18 @@
+ID: AUTH
+Actor: alice
+When: 20261027T191222Z UTC
+Request: POST /login
+Request-Headers:
+  Content-Type: application/json
+Request-Body: {"username": "alice", "password": "learn-alice"}
+Response-Status: 200
+Response-Headers:
+  Server: BaseHTTP/0.6 Python/3.14.4
+  Date: Tue, 27 Oct 2026 19:12:22 GMT
+  Content-Type: application/json; charset=utf-8
+  Content-Length: 45
+Response-Body:
+{"token": "7993e6f3e3304fd49e7770ab4fff5064"}
+
+Parsed-Effect:
+token=7993e6f3e3304fd49e7770ab4fff5064

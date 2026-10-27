@@ -1,0 +1,20 @@
+ID: I-01
+Actor: staff
+When: 20261027T191222Z UTC
+Request: GET /debug/logs
+Request-Headers:
+  Content-Type: application/json
+  X-Token: c07b4e73a52b49fa8aa19f944b6e00e0
+  X-Role: staff
+Request-Body: 
+Response-Status: 200
+Response-Headers:
+  Server: BaseHTTP/0.6 Python/3.14.4
+  Date: Tue, 27 Oct 2026 19:12:22 GMT
+  Content-Type: application/json; charset=utf-8
+  Content-Length: 2235
+Response-Body:
+[{"method": "POST", "target": "/login", "body": {"username": "alice", "password": "***"}, "headers": {"Accept-Encoding": "identity", "Content-Length": "48", "Host": "127.0.0.1:43675", "User-Agent": "Python-urllib/3.14", "Content-Type": "application/json", "Connection": "close"}}, {"method": "POST", "target": "/login", "body": {"username": "bob", "password": "***"}, "headers": {"Accept-Encoding": "identity", "Content-Length": "44", "Host": "127.0.0.1:43675", "User-Agent": "Python-urllib/3.14", "Content-Type": "application/json", "Connection": "close"}}, {"method": "POST", "target": "/login", "body": {"username": "staff", "password": "***"}, "headers": {"Accept-Encoding": "identity", "Content-Length": "48", "Host": "127.0.0.1:43675", "User-Agent": "Python-urllib/3.14", "Content-Type": "application/json", "Connection": "close"}}, {"method": "GET", "target": "/admin/export", "body": {}, "headers": {"Accept-Encoding": "identity", "Host": "127.0.0.1:43675", "User-Agent": "Python-urllib/3.14", "Content-Type": "application/json", "X-Role": "staff", "Connection": "close"}}, {"method": "GET", "target": "/admin/export", "body": {}, "headers": {"Accept-Encoding": "identity", "Host": "127.0.0.1:43675", "User-Agent": "Python-urllib/3.14", "Content-Type": "application/json", "Connection": "close"}}, {"method": "GET", "target": "/admin/export", "body": {}, "headers": {"Accept-Encoding": "identity", "Host": "127.0.0.1:43675", "User-Agent": "Python-urllib/3.14", "Content-Type": "application/json", "X-Role": "staff", "Connection": "close"}}, {"method": "GET", "target": "/profile?id=1", "body": {}, "headers": {"Accept-Encoding": "identity", "Host": "127.0.0.1:43675", "User-Agent": "Python-urllib/3.14", "Content-Type": "application/json", "Connection": "close"}}, {"method": "GET", "target": "/debug/logs", "body": {}, "headers": {"Accept-Encoding": "identity", "Host": "127.0.0.1:43675", "User-Agent": "Python-urllib/3.14", "Content-Type": "application/json", "Connection": "close"}}, {"method": "GET", "target": "/debug/logs", "body": {}, "headers": {"Accept-Encoding": "identity", "Host": "127.0.0.1:43675", "User-Agent": "Python-urllib/3.14", "Content-Type": "application/json", "X-Role": "staff", "Connection": "close"}}]
+
+Parsed-Effect:
+contains_password=***

@@ -1,0 +1,18 @@
+ID: AUTH
+Actor: bob
+When: 20261027T191222Z UTC
+Request: POST /login
+Request-Headers:
+  Content-Type: application/json
+Request-Body: {"username": "bob", "password": "learn-bob"}
+Response-Status: 200
+Response-Headers:
+  Server: BaseHTTP/0.6 Python/3.14.4
+  Date: Tue, 27 Oct 2026 19:12:22 GMT
+  Content-Type: application/json; charset=utf-8
+  Content-Length: 45
+Response-Body:
+{"token": "d2ea84837c52477488f8a9ed160c47f2"}
+
+Parsed-Effect:
+token=d2ea84837c52477488f8a9ed160c47f2
