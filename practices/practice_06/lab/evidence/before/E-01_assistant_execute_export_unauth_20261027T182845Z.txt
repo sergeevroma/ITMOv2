@@ -1,0 +1,17 @@
+ID: E-01
+When: 20261027T182845Z UTC
+Request: POST /assistant/execute
+Request-Headers:
+  Content-Type: application/json
+Request-Body: {"decision": {"tool": "export_profiles"}}
+Response-Status: 200
+Response-Headers:
+  Server: BaseHTTP/0.6 Python/3.14.4
+  Date: Tue, 27 Oct 2026 18:28:45 GMT
+  Content-Type: application/json; charset=utf-8
+  Content-Length: 188
+Response-Body:
+[{"id": 1, "name": "TEST_ALICE", "email": "alice@example.invalid", "address": "TEST_ADDRESS_A"}, {"id": 2, "name": "TEST_BOB", "email": "bob@example.invalid", "address": "TEST_ADDRESS_B"}]
+
+Parsed-Effect:
+profiles=[{'id': 1, 'name': 'TEST_ALICE', 'email': 'alice@example.invalid', 'address': 'TEST_ADDRESS_A'}, {'id': 2, 'name': 'TEST_BOB', 'email': 'bob@example.invalid', 'address': 'TEST_ADDRESS_B'}]

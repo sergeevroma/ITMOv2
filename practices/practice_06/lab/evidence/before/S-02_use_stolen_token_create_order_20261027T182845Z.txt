@@ -1,0 +1,18 @@
+ID: S-02
+When: 20261027T182845Z UTC
+Request: POST /orders
+Request-Headers:
+  Content-Type: application/json
+  X-Token: 85ebb9066e5048c59e00748dbcdd2bb6
+Request-Body: {"product": "chair"}
+Response-Status: 201
+Response-Headers:
+  Server: BaseHTTP/0.6 Python/3.14.4
+  Date: Tue, 27 Oct 2026 18:28:45 GMT
+  Content-Type: application/json; charset=utf-8
+  Content-Length: 56
+Response-Body:
+{"id": 3, "owner": 1, "product": "chair", "price": 5000}
+
+Parsed-Effect:
+created_order_owner=1, price=5000
