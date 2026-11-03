@@ -1,0 +1,17 @@
+ID: I-07_E-02
+When: 20261027T182845Z UTC
+Request: GET /reviews/view
+Request-Headers:
+  Content-Type: application/json
+Request-Body: 
+Response-Status: 200
+Response-Headers:
+  Server: BaseHTTP/0.6 Python/3.14.4
+  Date: Tue, 27 Oct 2026 18:28:45 GMT
+  Content-Type: text/html; charset=utf-8
+  Content-Length: 60
+Response-Body:
+<html><body><p><script>alert('x')</script></p></body></html>
+
+Parsed-Effect:
+has_script=True

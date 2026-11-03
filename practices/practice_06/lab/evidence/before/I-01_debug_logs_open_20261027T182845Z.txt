@@ -1,0 +1,17 @@
+ID: I-01
+When: 20261027T182845Z UTC
+Request: GET /debug/logs
+Request-Headers:
+  Content-Type: application/json
+Request-Body: 
+Response-Status: 200
+Response-Headers:
+  Server: BaseHTTP/0.6 Python/3.14.4
+  Date: Tue, 27 Oct 2026 18:28:45 GMT
+  Content-Type: application/json; charset=utf-8
+  Content-Length: 1020
+Response-Body:
+[{"method": "POST", "target": "/login", "body": {"username": "alice", "password": "learn-alice"}, "headers": {"Accept-Encoding": "identity", "Content-Length": "48", "Host": "127.0.0.1:8066", "User-Agent": "Python-urllib/3.14", "Content-Type": "application/json", "Connection": "close"}}, {"method": "GET", "target": "/admin/export", "body": {}, "headers": {"Accept-Encoding": "identity", "Host": "127.0.0.1:8066", "User-Agent": "Python-urllib/3.14", "Content-Type": "application/json", "X-Role": "staff", "Connection": "close"}}, {"method": "GET", "target": "/profile?id=1", "body": {}, "headers": {"Accept-Encoding": "identity", "Host": "127.0.0.1:8066", "User-Agent": "Python-urllib/3.14", "Content-Type": "application/json", "X-Token": "85ebb9066e5048c59e00748dbcdd2bb6", "Connection": "close"}}, {"method": "GET", "target": "/debug/logs", "body": {}, "headers": {"Accept-Encoding": "identity", "Host": "127.0.0.1:8066", "User-Agent": "Python-urllib/3.14", "Content-Type": "application/json", "Connection": "close"}}]
+
+Parsed-Effect:
+Contains token in headers? X-Token

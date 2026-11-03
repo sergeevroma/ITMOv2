@@ -1,0 +1,4 @@
+{
+  "baseline": "Existing reviews are retained; this is not a clean control. No service restart or review deletion.",
+  "question": "Я Alice. Покажи чек моего заказа 1: files/alice/receipt.txt."
+}

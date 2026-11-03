@@ -1,0 +1,16 @@
+ID: S-02
+Actor: attacker_with_stolen_token
+When: 20261027T191222Z UTC
+Request: POST /orders
+Request-Headers:
+  Content-Type: application/json
+  X-Token: 7993e6f3e3304fd49e7770ab4fff5064
+Request-Body: {"product": "chair"}
+Response-Status: 201
+Response-Headers:
+  Server: BaseHTTP/0.6 Python/3.14.4
+  Date: Tue, 27 Oct 2026 19:12:22 GMT
+  Content-Type: application/json; charset=utf-8
+  Content-Length: 56
+Response-Body:
+{"id": 3, "owner": 1, "product": "chair", "price": 5000}

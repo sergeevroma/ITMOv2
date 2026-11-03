@@ -1,0 +1,23 @@
+{
+  "mode": "direct Shop.dispatch on a new disposable instance; no HTTP process",
+  "principal": "alice/customer",
+  "request": {
+    "decision": {
+      "tool": "delete_tree",
+      "arguments": {
+        "path": "."
+      }
+    }
+  },
+  "files_before": [
+    "files/alice/receipt.txt",
+    "files/bob/receipt.txt",
+    "private/operator-note.txt"
+  ],
+  "status": 200,
+  "response": {
+    "deleted": "."
+  },
+  "sandbox_root_exists_after": false,
+  "outside_sentinel_unchanged": true
+}

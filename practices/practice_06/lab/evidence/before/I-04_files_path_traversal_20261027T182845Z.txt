@@ -1,0 +1,14 @@
+ID: I-04
+When: 20261027T182845Z UTC
+Request: GET /files?user=alice&path=..%2Fprivate%2Foperator-note.txt
+Request-Headers:
+  Content-Type: application/json
+Request-Body: 
+Response-Status: 500
+Response-Headers:
+  Server: BaseHTTP/0.6 Python/3.14.4
+  Date: Tue, 27 Oct 2026 18:28:45 GMT
+  Content-Type: application/json; charset=utf-8
+  Content-Length: 143
+Response-Body:
+{"error": "[Errno 2] No such file or directory: '/tmp/itmo-practice-06-qvt5evew/files/private/operator-note.txt'", "type": "FileNotFoundError"}
