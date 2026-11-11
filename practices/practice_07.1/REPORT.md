@@ -54,23 +54,49 @@ PR получил метку `ReviewedByAI`.
 
 ## 2. Классная работа: ревью по команде /make_ai_review
 
-**Статус:** не подтверждено.
+**Статус:** подтверждено реальными запусками.
 
-**Workflow:** TODO — экспортировать в `workflows/single_agent_with_command.json` и добавить ссылку.
+**Workflow:** [single_agent_with_command.json](workflows/single_agent_with_command.json).
 
-**Что изменено:** TODO — описать событие комментария, фильтр команды и получение данных PR.
+**Что изменено:** GitHub Trigger переключён на событие `issue_comment`.
+IF пропускает только новый комментарий (`action = created`), который относится к PR
+и после удаления пробелов по краям совпадает с `/make_ai_review`.
+Нода `Get PR details` получает сведения о PR для последующих запросов diff и README.
+Открытие PR само по себе ревью не запускает.
 
-**Тестовый PR и комментарий-команда:** TODO — добавить ссылки.
+**Тестовый PR:** [N8N_practice #2: bug-stock → main](https://github.com/sergeevroma/N8N_practice/pull/2).
+Команда `/make_ai_review` и ответ модели показаны на [скриншоте обсуждения](screenshots/02_review_command/pr_review.png).
+
+**Результат ревью:** модель обнаружила ошибку в `can_buy` файла `shop.py`:
+условие `requested < stock` запрещает покупку всего остатка товара.
+Для `stock = 5`, `requested = 5` функция возвращает `False` вместо `True`.
+В ревью предложено восстановить `requested <= stock`; PR получил метку `ReviewedByAI`.
 
 | Проверка | Ожидаемый результат | Фактический результат | Доказательство |
 |---|---|---|---|
-| Открыть PR | Автоматического ревью нет | TODO | TODO |
-| Написать обычный комментарий в PR | Модель и публикация не выполняются | TODO | TODO |
-| Написать /make_ai_review в PR | Основная модель публикует ревью | TODO | TODO |
-| Написать /make_ai_review в обычном issue | Ревью не выполняется | TODO | TODO |
+| Открыть PR | Автоматического ревью нет | После открытия PR ревью и метка отсутствовали | [PR до команды](screenshots/02_review_command/pr_before_command.png) |
+| Написать обычный комментарий в PR | Модель и публикация не выполняются | Execution №194 завершился после триггера и IF; дальнейшие ноды не выполнялись | [Execution](screenshots/02_review_command/execution_ignored.png) |
+| Написать /make_ai_review в PR | Основная модель публикует ревью | Execution №195 успешно выполнил всю цепочку; опубликовано ревью и установлена метка | [Execution](screenshots/02_review_command/execution_command.png), [результат в PR](screenshots/02_review_command/pr_review.png) |
 
-**Скриншоты:** `screenshots/02_review_command/` — схема, успешное Execution,
-Execution с пропущенным комментарием, команда и ответ в PR.
+**Схема workflow:**
+
+![Схема запуска по команде](screenshots/02_review_command/workflow.png)
+
+**PR после открытия, до отправки команды:**
+
+![Автоматического ревью нет](screenshots/02_review_command/pr_before_command.png)
+
+**Обычный комментарий, Execution №194:**
+
+![Обычный комментарий отсекается](screenshots/02_review_command/execution_ignored.png)
+
+**Запуск по /make_ai_review, Execution №195:**
+
+![Успешное выполнение по команде](screenshots/02_review_command/execution_command.png)
+
+**Команда, опубликованное ревью и метка:**
+
+![Результат ревью по команде](screenshots/02_review_command/pr_review.png)
 
 ## 3. Домашняя работа: вторая модель
 
