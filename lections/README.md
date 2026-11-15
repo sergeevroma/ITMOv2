@@ -13,7 +13,7 @@
 | Лекция 5: Spec-driven разработка с AI-агентами |[Ссылка](https://avito.ktalk.ru/recordings/h97Hp1y7ZAodGoCIRLC3) |
 | Лекция 6: AI-evaluation: бенчмарки |[Ссылка](https://avito.ktalk.ru/recordings/JJRMcw6UvkCvVQHLgpqD) |
 | Лекция 7: Организация код-ревью с помощью N8N и поддержка пользователя с помощью AI инструментов |Очно |
-| Лекция + Практика 8: Дизайн на фронтенде | |
+| Лекция + Практика 8: Дизайн на фронтенде |[Ссылка](https://avito.ktalk.ru/recordings/BA3nowru0dVoFZnaulOr) |
 
 ## Практики
 
@@ -28,4 +28,4 @@
 | Практика 5. Spec-driven development |[Cсылка](https://avito.ktalk.ru/recordings/hnGLzA5FEnHRbFkZ1Qld) |[Ссылка](https://avito.ktalk.ru/recordings/L0ecyG6I98WGJbSP82xS) |[Ссылка](https://avito.ktalk.ru/recordings/Izx76QSoxd8nXFV09YG6) |[Cсылка](https://avito.ktalk.ru/recordings/NVd94g2nLozW5dVFjlIJ)|[Ссылка](https://avito.ktalk.ru/recordings/Ho7BlQyY9Qh2JSsPNP5N) |
 | Практика 6. Пишем бенчмарки для AI |Очно |[Ссылка](https://avito.ktalk.ru/recordings/UC7dO1DOXSUSpUgLvueI) |[Ссылка](https://avito.ktalk.ru/recordings/Vr5CmShRk4l3eQGsmyYb) |[Ссылка](https://avito.ktalk.ru/recordings/qQEAUmn7zfcqB0Hg3Y7z)|[Cсылка](https://avito.ktalk.ru/recordings/keJxh63i8IqgTfjnflXE) |
 | Практика 7.1. Создаем ассистента для код-ревью |[Ссылка](https://avito.ktalk.ru/recordings/873QBkQuLAAQbqunJMxr) |[Ссылка](https://avito.ktalk.ru/recordings/2DWesj2dB01iDP0lPmXO) |[Cсылка](https://avito.ktalk.ru/recordings/L7rSA9SYccPG2wXQ9W0P) |[Ссылка](https://avito.ktalk.ru/recordings/fRqp9N3SWfRjFVaJYHa9) |[Cсылка](https://avito.ktalk.ru/recordings/ZtMHV2pxxyTcb2gdzaeP) |
-| Практика 7.2. Автоматизируем поддержку: от неструктурированных баг-репортов к тикетам | | | | | |
+| Практика 7.2. Автоматизируем поддержку: от неструктурированных баг-репортов к тикетам |[Ссылка](https://avito.ktalk.ru/recordings/Ari03XK7cc0up5QXJmBx) |[Ссылка](https://avito.ktalk.ru/recordings/2oeHfDkhPQqAY5w2GEA3) |[Ссылка](https://avito.ktalk.ru/recordings/I7oT7CNdINTq9fi55bxA) | | |
