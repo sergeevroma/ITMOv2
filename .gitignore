@@ -173,3 +173,7 @@ student_solutions/
 !.roo/
 !.specify/
 !.vscode/
+
+# N8N practice
+practices/practice_07.1/N8N_practice
+practices/practice_07.2/tiny-notes
