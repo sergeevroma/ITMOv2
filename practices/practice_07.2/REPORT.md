@@ -8,6 +8,8 @@
 - Модель классификатора: `openai/gpt-5`, провайдер VseLLM.
 - Основной сценарий: [01_issue_triage.json](workflows/01_issue_triage.json).
 - Sub-workflow классификатора: [01_classify_issue.json](workflows/01_classify_issue.json).
+- Еженедельный отчёт и отправка: [02_gmail_send.json](workflows/02_gmail_send.json).
+- Анализ изменений: [03_weekly_analysis.json](workflows/03_weekly_analysis.json).
 
 ## 1. Классификация Issues: bug / task / feature
 
@@ -137,78 +139,132 @@ confidence и время обработки.
 
 ## 4. Еженедельная статистика: Cron и группировка
 
-**Статус:** сценарий статистики и подтверждения запусков ещё не предоставлены.
+**Статус:** выполнено. В ручном запуске выбраны пять обработанных Issues,
+сформирована статистика по типам и авторам, сохранён недельный снимок.
 
-**Планируемая реализация:** Cron `0 9 * * MON`, timezone `Europe/Moscow`;
-источник данных — обработанные Issues из `processed_issues` за прошлую неделю.
-В тестовом наборе должно быть не меньше четырёх Issues, покрывающих bug, feature,
-task и unknown. Code группирует выборку по типу и по автору.
+**Workflow:** [02_gmail_send.json](workflows/02_gmail_send.json).
+
+**Что настроено:** `Schedule Trigger` использует cron `0 9 * * MON`.
+`Period` рассчитывает границы прошлой завершённой календарной недели в
+`Europe/Moscow`. `Read Issues` читает `processed_issues` по двум условиям:
+`processed_at >= from` и `processed_at < to`, возвращая все подходящие записи.
+Источник статистики — Issues, обработанные Workflow 1 и сохранённые в Data Table.
+
+`Aggregate` считает общее количество, группирует записи по `type` и `author`.
+`Upsert row(s)` сохраняет снимок в `weekly_stats` по ключу `week_start`.
+После вызова аналитического workflow результат передаётся в `Build Email`
+и `Send Report`.
+
+```text
+Schedule Trigger → Period → Read Issues → Aggregate → Upsert row(s)
+  → Call Weekly Analysis → Build Email → Send Report
+```
+
+**Как проверено:** запуск выполнен вручную 19.11.2026. Для выборки пяти Issues,
+обработанных 18 ноября, временно задан `TEST_WEEK_START = "2026-11-16"`.
+Тестовый период — 16–22 ноября: начало `2026-11-16T00:00:00+03:00`,
+конец `2026-11-23T00:00:00+03:00`, не включая правую границу.
+Проверка проведена до завершения этой недели, поэтому тема письма содержит
+`[ТЕСТ]`. В приложенном финальном экспорте `TEST_WEEK_START = ""`:
+при обычном запуске период снова определяется автоматически.
 
 | Проверка | Ожидаемый результат | Фактический результат | Доказательство |
 |---|---|---|---|
-| Cron и выборка за прошлую неделю | Расписание настроено; в Execution видны границы периода и выбранные Issues | Ожидается реализация | Экспорт и Execution ещё не предоставлены |
-| Группировка Code node | Сформированы количества по типам и авторам | Ожидается реализация | Результат Code в Execution ещё не предоставлен |
+| Cron и недельная выборка | Настроено расписание; выбраны Issues отчётного периода | Cron `0 9 * * MON` присутствует в экспорте; в ручном тесте `Read Issues` передала 5 items в `Aggregate` | [Экспорт](workflows/02_gmail_send.json), [Execution](screenshots/07_gmail.png) |
+| Группировка по типу | Каждое обращение учтено в одном типе | Всего 5: bug — 1, feature — 2, task — 1, unknown — 1 | [Execution](screenshots/07_gmail.png), [письмо](screenshots/09_result_mail.png) |
+| Группировка по автору | Рассчитано число обращений каждого автора | sergeevroma — 3, al3ksandraa — 1, WildBoar228 — 1 | [Письмо](screenshots/09_result_mail.png) |
 
-Планируемый экспорт: `workflows/02_weekly_report.json`. Планируемый скриншот
-Execution: `screenshots/06_weekly_stats.png`. Один реальный запуск
-может подтверждать выборку и группировку. Настройка Cron проверяется по экспорту;
-ждать понедельника для ручной проверки не требуется.
+На скриншоте видны пять записей после `Read Issues`, один агрегированный item
+после `Aggregate` и успешное выполнение всех последующих нод.
+
+![Workflow 2: выборка пяти Issues, агрегация, сохранение, аналитика и отправка](screenshots/07_gmail.png)
 
 ## 5. HTML-отчёт через Gmail
 
-**Статус:** отправка и полученное письмо ещё не подтверждены.
+**Статус:** выполнено. Gmail-нода успешно отправила HTML-отчёт, письмо получено.
 
-**Планируемая реализация:** Gmail node отправляет HTML-письмо с таблицами
-недельной статистики по типам и авторам.
+**Workflow:** [02_gmail_send.json](workflows/02_gmail_send.json).
+
+**Что настроено:** `Build Email` формирует тему и HTML с таблицами по типам
+и авторам. Для каждой строки показаны значения отчётной и предыдущей недели,
+а также Δ. Ниже размещается блок «AI-комментарий недели».
+`Send Report` использует Gmail OAuth2, операцию `Message → Send`, тему
+из `$json.subject` и HTML из `$json.html`.
 
 | Проверка | Ожидаемый результат | Фактический результат | Доказательство |
 |---|---|---|---|
-| Отправка недельного отчёта | Gmail node успешно выполнена, HTML-письмо получено адресатом | Ожидается реализация | Execution отправки и скриншот письма ещё не предоставлены |
+| Отправка недельного отчёта | Gmail node успешно выполнена, HTML-письмо получено адресатом | `Send Report` завершилась успешно; в Gmail получено письмо «[ТЕСТ] Tiny Notes — отчёт за 16.11.2026–22.11.2026» с обеими таблицами, Δ и AI-комментарием | [Execution](screenshots/07_gmail.png), [полученное письмо](screenshots/09_result_mail.png) |
 
-Планируемый файл полученного письма: `screenshots/weekly_report.png`.
-Скриншот делается из Gmail с видимыми темой и содержимым таблиц. При выполнении
-звёздочки тот же итоговый снимок должен показывать Δ и AI-комментарий недели.
+В письме указано: **всего обращений — 5, предыдущая неделя — 4, Δ = +1**.
+
+![Полученное в Gmail письмо со статистикой, изменениями и AI-комментарием](screenshots/09_result_mail.png)
 
 ## 6. Задание со звёздочкой: снимки недель, Δ и AI-комментарий
 
-**Статус:** аналитический сценарий, две недели в Data Table и итоговое письмо
-ещё не предоставлены.
+**Статус:** выполнено. Недельная статистика сохранена, изменения рассчитаны
+по предыдущему снимку, AI-аннотация включена в полученное письмо.
 
-**Планируемая реализация:** недельные агрегаты сохраняются в `weekly_stats`.
-Отдельный workflow аналитики читает текущую и предыдущую календарную неделю,
-вычисляет Δ и передаёт агрегаты вместе с изменениями в Basic LLM Chain.
-Результат возвращается в сценарий рассылки и попадает в блок
-«AI-комментарий недели» того же письма.
+**Workflow:** [03_weekly_analysis.json](workflows/03_weekly_analysis.json).
+
+**Что настроено:** `Call Weekly Analysis` передаёт объект `current_stats`
+из `Aggregate` и ждёт завершения sub-workflow. `Analysis Input` принимает его
+как Object. `Prepare Compare` вычисляет ключ предыдущей недели;
+`Read Previous Week` читает соответствующую запись из `weekly_stats`.
+`Calculate Delta` разбирает JSON-счётчики и вычисляет разницу
+`отчётная неделя − предыдущая неделя` для общего количества, типов и авторов.
+
+```text
+Analysis Input → Prepare Compare → Read Previous Week → Calculate Delta
+  → Weekly LLM → Return Analysis
+```
+
+`Weekly LLM` — Basic LLM Chain с моделью `openai/gpt-5`. На вход передаются
+`current`, `previous` и уже рассчитанный `delta`. System prompt требует
+аннотацию на русском языке, только по переданным числам, без выдуманных причин.
+`Return Analysis` возвращает статистику, изменения и `ai_comment` в Workflow 2.
+
+**Таблица `weekly_stats`:**
+
+| Колонка | Тип | Назначение |
+|---|---|---|
+| `week_start` | String | Начало недели, ключ Upsert |
+| `week_end` | String | Начало следующей недели, не включается в период |
+| `total` | Number | Общее количество Issues |
+| `by_type_json` | String | JSON со счётчиками по типам |
+| `by_author_json` | String | JSON со счётчиками по авторам |
+| `generated_at` | Date | Время формирования снимка |
+
+**Данные двух недель, использованные в проверке:** запись за 9–15 ноября
+добавлена вручную как искусственная тестовая база сравнения, что разрешено README.
+Запись за 16–22 ноября сформирована Workflow 2 из пяти реальных обработанных Issues.
+
+| week_start | week_end | total | by_type_json | by_author_json |
+|---|---|---|---|---|
+| `2026-11-09` | `2026-11-16` | 4 | `{"bug":2,"feature":1,"task":1,"unknown":0}` | `{"sergeevroma":3,"WildBoar228":1}` |
+| `2026-11-16` | `2026-11-23` | 5 | `{"bug":1,"feature":2,"task":1,"unknown":1}` | `{"sergeevroma":3,"al3ksandraa":1,"WildBoar228":1}` |
+
+Сохранение текущего снимка видно по успешной `Upsert row(s)` в Workflow 2,
+чтение предыдущего — по `Read Previous Week` в Workflow 3. Числа обоих периодов
+и рассчитанные изменения показаны в полученном письме.
 
 | Проверка | Ожидаемый результат | Фактический результат | Доказательство |
 |---|---|---|---|
-| Сохранение статистики | В Data Table есть недельные снимки минимум за два периода | Ожидается реализация | Содержимое weekly_stats ещё не предоставлено |
-| Расчёт Δ | Изменения рассчитаны по сохранённой предыдущей неделе и показаны в письме | Ожидается реализация | Execution расчёта и письмо ещё не предоставлены |
-| AI-аннотация | Basic LLM Chain получает статистику и Δ; текст выведен в письме | Ожидается реализация | Execution LLM и письмо ещё не предоставлены |
+| Сохранение статистики | Текущий снимок записан в Data Table, предыдущая неделя доступна для сравнения | Сохранён снимок с total 5, прочитана искусственная предыдущая неделя с total 4 | [Workflow 2](screenshots/07_gmail.png), [Workflow 3](screenshots/08_week_analysis.png), содержимое снимков в таблице выше |
+| Расчёт Δ | Изменения рассчитаны по сохранённой предыдущей неделе и показаны в письме | total +1; bug −1, feature +1, task 0, unknown +1; по авторам: al3ksandraa +1, остальные 0 | [Workflow 3](screenshots/08_week_analysis.png), [письмо](screenshots/09_result_mail.png) |
+| AI-аннотация | Basic LLM Chain получает статистику и Δ; текст выведен в письме | `Weekly LLM` и `Return Analysis` выполнены успешно; в письме есть «AI-комментарий недели» с итогом 5 против 4 и изменениями по типам и авторам | [Workflow 3](screenshots/08_week_analysis.png), [письмо](screenshots/09_result_mail.png) |
 
-Планируемый экспорт: `workflows/03_weekly_analysis.json`. Планируемые снимки:
-`screenshots/07_weekly_analysis.png` и
-`screenshots/weekly_stats.png`. Предыдущую неделю разрешено сымитировать
-тестовой записью согласно README; при таком тесте искусственное происхождение
-записи будет явно указано в отчёте.
+![Workflow 3: чтение предыдущего снимка, вычисление Δ и AI-аннотация](screenshots/08_week_analysis.png)
 
 ## Артефакты для сдачи
 
-В отчёт включаются только виды артефактов, перечисленные в README практики 7.2:
-
-| Артефакт | Что уже предоставлено | Что ещё нужно |
-|---|---|---|
-| Экспорты всех использованных сценариев в JSON | [Workflow 1](workflows/01_issue_triage.json) после исправлений и [классификатор](workflows/01_classify_issue.json) | Добавить статистику и отдельную аналитику |
-| Репозиторий с Issues всех типов, включая needs-triage | [bug #5](https://github.com/sergeevroma/N8N_practice_2/issues/5), [feature #6](https://github.com/sergeevroma/N8N_practice_2/issues/6), [needs-triage #7](https://github.com/sergeevroma/N8N_practice_2/issues/7), [task #8](https://github.com/sergeevroma/N8N_practice_2/issues/8), [новичок #9](https://github.com/sergeevroma/N8N_practice_2/issues/9) | — |
-| Скриншоты выполненных шагов | Пять скриншотов Workflow 1 в [screenshots](screenshots) и [Data Table после пяти Issues](screenshots/06_data_table_workflow_1.png), включая типы и confidence | Статистика, Gmail и аналитика |
-| Скриншот полученного письма | Пока не предоставлен | Итоговое HTML-письмо в Gmail |
-| Содержимое Data Table минимум за две недели для звёздочки | Пока не предоставлено | weekly_stats с двумя недельными снимками |
-
-Для Workflow 1 приложены общие скриншоты пяти выполненных сценариев с видимыми
-ветками обработки и скриншот `processed_issues` с результатами всех пяти запусков.
-Вызов sub-workflow показан на общих снимках. Результаты
-в GitHub доступны по ссылкам на Issues. Подтверждения следующих workflow будут
-добавлены после их выполнения.
+| Артефакт | Подтверждение |
+|---|---|
+| JSON-экспорты сценариев | [Workflow 1](workflows/01_issue_triage.json), [классификатор](workflows/01_classify_issue.json), [Workflow 2](workflows/02_gmail_send.json), [Workflow 3](workflows/03_weekly_analysis.json) |
+| Репозиторий с тестовыми Issues | [bug #5](https://github.com/sergeevroma/N8N_practice_2/issues/5), [feature #6](https://github.com/sergeevroma/N8N_practice_2/issues/6), [needs-triage #7](https://github.com/sergeevroma/N8N_practice_2/issues/7), [task #8](https://github.com/sergeevroma/N8N_practice_2/issues/8), [новичок #9](https://github.com/sergeevroma/N8N_practice_2/issues/9) |
+| Скриншоты выполненных шагов | [Workflow 1: bug](screenshots/01_bug.png), [feature](screenshots/02_feature.png), [task](screenshots/03_task.png), [needs-triage](screenshots/04_needs_triage.png), [новичок](screenshots/05_newcomer.png); [Workflow 2](screenshots/07_gmail.png), [Workflow 3](screenshots/08_week_analysis.png) |
+| Данные обработанных Issues | [processed_issues после пяти запусков](screenshots/06_data_table_workflow_1.png) |
+| Полученное письмо | [HTML-отчёт в Gmail со статистикой, Δ и AI-комментарием](screenshots/09_result_mail.png) |
+| Содержимое Data Table за две недели | В разделе 6 приведены снимки `weekly_stats` за 9–15 и 16–22 ноября; предыдущая неделя явно обозначена как искусственная |
 
 ## Итог сдачи
 
@@ -216,11 +272,11 @@ Execution: `screenshots/06_weekly_stats.png`. Один реальный запу
 - [x] Подтверждены три типа Issues и эскалация при confidence 0.3 < 0.8 без комментария.
 - [x] Подтверждён реальный вызов sub-workflow.
 - [x] Подтверждены ветка нового участника, публикация комментария и сохранение.
-- [ ] Подтверждены Cron, недельная выборка и группировка по типу и автору.
-- [ ] Получено HTML-письмо через Gmail node.
-- [ ] Для звёздочки показаны два недельных снимка, Δ и AI-комментарий.
+- [x] Подтверждены настройка Cron, недельная выборка и группировка по типу и автору.
+- [x] Получено HTML-письмо через Gmail node.
+- [x] Для звёздочки приведены два недельных снимка, Δ и AI-комментарий.
 - [x] Вставлены реальные ссылки на пять Issues и скриншоты Workflow 1.
-- [ ] Добавлены подтверждения статистики, Gmail и аналитики.
+- [x] Добавлены подтверждения статистики, Gmail и аналитики.
 
 Задача на сверхрезультат с автоматическим исправлением и merge в объём работы
 не входит.

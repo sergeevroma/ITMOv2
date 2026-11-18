@@ -1,0 +1,361 @@
+{
+  "name": "Practice 7.2 (step 2)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * MON"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -944,
+        -176
+      ],
+      "id": "615431cb-5935-4042-8050-ade1fab0a58b",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const TEST_WEEK_START = \"\";\nconst now = $now.setZone(\"Europe/Moscow\");\nlet start = now.startOf(\"week\").minus({ weeks: 1 });\n\nif (TEST_WEEK_START) {\n  const [year, month, day] = TEST_WEEK_START.split(\"-\").map(Number);\n  start = now.set({ year, month, day }).startOf(\"day\");\n}\n\nconst end = start.plus({ weeks: 1 });\nreturn [{ json: {\n  week_start: start.toISODate(),\n  week_end: end.toISODate(),\n  from: start.toUTC().toISO(),\n  to: end.toUTC().toISO(),\n  is_test: Boolean(TEST_WEEK_START),\n} }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -768,
+        -176
+      ],
+      "id": "2040ba98-81ba-439a-8d53-08959f0c1c56",
+      "name": "Period"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "ESaZBnxm1oo4Ro4H",
+          "mode": "list",
+          "cachedResultName": "processed_issues",
+          "cachedResultUrl": "/projects/pcjPqnvi2JOh4erx/datatables/ESaZBnxm1oo4Ro4H"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "processed_at",
+              "condition": "gte",
+              "keyValue": "={{ $json.from }}"
+            },
+            {
+              "keyName": "processed_at",
+              "condition": "lt",
+              "keyValue": "={{ $json.to }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -608,
+        -176
+      ],
+      "id": "c7b828df-d60f-46ca-b888-882701e536f2",
+      "name": "Read Issues",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const period = $(\"Period\").first().json;\nconst rows = $input.all().map(item => item.json).filter(row => row.issue_id);\nconst byType = { bug: 0, feature: 0, task: 0, unknown: 0 };\nconst byAuthor = {};\n\nfor (const row of rows) {\n  byType[row.type] += 1;\n  byAuthor[row.author] = (byAuthor[row.author] ?? 0) + 1;\n}\n\nreturn [{ json: {\n  week_start: period.week_start,\n  week_end: period.week_end,\n  total: rows.length,\n  by_type_json: JSON.stringify(byType),\n  by_author_json: JSON.stringify(byAuthor),\n  generated_at: new Date().toISOString(),\n} }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -432,
+        -176
+      ],
+      "id": "1698ea67-3c40-41ea-9e2e-f0f2717c2120",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "XGd8XrfyijIFhV4n",
+          "mode": "list",
+          "cachedResultName": "weekly_stats",
+          "cachedResultUrl": "/projects/pcjPqnvi2JOh4erx/datatables/XGd8XrfyijIFhV4n"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "week_start",
+              "keyValue": "={{ $json.week_start }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "week_start",
+              "displayName": "week_start",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "week_end",
+              "displayName": "week_end",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "total",
+              "displayName": "total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "by_type_json",
+              "displayName": "by_type_json",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "by_author_json",
+              "displayName": "by_author_json",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "generated_at",
+              "displayName": "generated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -272,
+        -176
+      ],
+      "id": "cd1d936e-2e97-48b1-a3bf-0f49aaff494c",
+      "name": "Upsert row(s)"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "REJ5MyCaz0yCkiLM",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/REJ5MyCaz0yCkiLM",
+          "cachedResultName": "Weekly Analysis"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "current_stats": "={{ $('Aggregate').first().json }}"
+          },
+          "matchingColumns": [
+            "current_stats"
+          ],
+          "schema": [
+            {
+              "id": "current_stats",
+              "displayName": "current_stats",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        -112,
+        -176
+      ],
+      "id": "dad7ffb6-27f6-4f2b-a4d4-1ba05cad9648",
+      "name": "Call Weekly Analysis"
+    },
+    {
+      "parameters": {
+        "jsCode": "const { current, previous, delta, ai_comment } = $input.first().json;\nconst isTest = $(\"Period\").first().json.is_test;\nconst escapeHtml = value => String(value).replace(/[&<>\"']/g, char => ({\n  \"&\": \"&amp;\", \"<\": \"&lt;\", \">\": \"&gt;\", '\"': \"&quot;\", \"'\": \"&#39;\",\n}[char]));\nconst showDelta = value => value === null ? \"—\" : value > 0 ? `+${value}` : String(value);\nconst formatDate = value => value.split(\"-\").reverse().join(\".\");\nconst lastDay = new Date(current.week_end + \"T00:00:00Z\");\nlastDay.setUTCDate(lastDay.getUTCDate() - 1);\nconst period = `${formatDate(current.week_start)}–${formatDate(lastDay.toISOString().slice(0, 10))}`;\n\nconst types = [\"bug\", \"feature\", \"task\", \"unknown\"];\nconst typeRows = types.map(type => `<tr>\n  <td>${type === \"unknown\" ? \"unknown (needs-triage)\" : type}</td>\n  <td>${current.by_type[type] ?? 0}</td>\n  <td>${previous ? previous.by_type[type] ?? 0 : \"—\"}</td>\n  <td>${showDelta(delta.by_type[type])}</td>\n</tr>`).join(\"\");\nconst authorRows = Object.keys(delta.by_author).map(author => `<tr>\n  <td>${escapeHtml(author)}</td>\n  <td>${current.by_author[author] ?? 0}</td>\n  <td>${previous ? previous.by_author[author] ?? 0 : \"—\"}</td>\n  <td>${showDelta(delta.by_author[author])}</td>\n</tr>`).join(\"\");\nconst table = (heading, rows) => `<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\">\n  <thead><tr><th>${heading}</th><th>Отчётная неделя</th><th>Предыдущая неделя</th><th>Δ</th></tr></thead>\n  <tbody>${rows}</tbody></table>`;\n\nconst html = `<html><body>\n  <h2>Tiny Notes: ${period}</h2>\n  <p>Всего обращений: <b>${current.total}</b>.\n  Предыдущая неделя: ${previous ? previous.total : \"нет данных\"}.\n  Δ: ${showDelta(delta.total)}.</p>\n  <h3>По типам</h3>${table(\"Тип\", typeRows)}\n  <h3>По авторам</h3>${table(\"Автор\", authorRows)}\n  <h3>AI-комментарий недели</h3>\n  <p>${escapeHtml(ai_comment).replace(/\\r?\\n/g, \"<br>\")}</p>\n</body></html>`;\n\nreturn [{ json: {\n  subject: `${isTest ? \"[ТЕСТ] \" : \"\"}Tiny Notes — отчёт за ${period}`,\n  html,\n} }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        -176
+      ],
+      "id": "18578df0-f18e-4780-892b-c984516cf251",
+      "name": "Build Email"
+    },
+    {
+      "parameters": {
+        "sendTo": "mikromchik@gmail.com",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        -176
+      ],
+      "id": "efe0bc5a-adc0-4344-9e4f-5243baaf9727",
+      "name": "Send Report",
+      "webhookId": "dba89047-702a-4c93-84c3-4bf27f8e3e6c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TIOwNmoL9II1cLha",
+          "name": "Gmail account 10"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Period": {
+      "main": [
+        [
+          {
+            "node": "Read Issues",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Issues": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Upsert row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert row(s)": {
+      "main": [
+        [
+          {
+            "node": "Call Weekly Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Weekly Analysis": {
+      "main": [
+        [
+          {
+            "node": "Build Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Email": {
+      "main": [
+        [
+          {
+            "node": "Send Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a180e89d-84f6-4c30-b524-e1dc0aadc363",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "68dbbb4e8fa686c3fd4e9982ade6836edb66976f207553e7ac22df961581c78c"
+  },
+  "nodeGroups": [],
+  "id": "M7aAr5GnEI3mAkzJ",
+  "tags": []
+}
