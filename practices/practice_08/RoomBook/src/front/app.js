@@ -1,5 +1,11 @@
 const ui = {
   form: document.querySelector("#booking-form"),
+  fields: document.querySelector("#booking-fields"),
+  submitLabel: document.querySelector("#submit-label"),
+  submitSpinner: document.querySelector("#submit-spinner"),
+  formError: document.querySelector("#form-error"),
+  success: document.querySelector("#action-success"),
+  actionError: document.querySelector("#action-error"),
   date: document.querySelector("#booking-date"),
   rooms: document.querySelector("#room-picker"),
   start: document.querySelector("#booking-start"),
@@ -26,13 +32,20 @@ const ui = {
 
 let rules = null;
 let pendingSchedule = null;
+let saving = false;
+let lastCreatedId = null;
+const cancelling = new Set();
 
-async function fetchJson(url, signal) {
-  const response = await fetch(url, { signal });
+async function fetchJson(url, options = {}) {
+  const response = await fetch(url, options);
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
+    const body = await response.json().catch(() => null);
+    const error = new Error(body?.error?.message || `HTTP ${response.status}`);
+    error.status = response.status;
+    error.fields = body?.error?.fields || {};
+    throw error;
   }
-  return response.json();
+  return response.status === 204 ? null : response.json();
 }
 
 function cloneTemplate(id) {
@@ -47,6 +60,7 @@ function renderRooms(rooms) {
     const radio = choice.querySelector("input");
     radio.value = room.id;
     radio.setAttribute("aria-label", room.name);
+    radio.setAttribute("aria-describedby", "room-error");
     choice.querySelector(".room-number").textContent = room.id;
     choice.querySelector(".room-capacity").textContent = `Мест: ${room.capacity}`;
     choice.querySelector(".room-equipment").textContent = room.equipment.join(", ");
@@ -134,9 +148,14 @@ function createBookingCard(booking) {
   }
   organizer.textContent = booking.organizer;
   card.querySelector(".meeting-description").textContent = booking.title;
-  card.querySelector("button").setAttribute(
+  card.classList.toggle("new-booking", booking.id === lastCreatedId);
+  const cancel = card.querySelector("button");
+  cancel.disabled = cancelling.has(booking.id);
+  cancel.textContent = cancel.disabled ? "Отменяем…" : "Отменить";
+  cancel.setAttribute(
     "aria-label", `Отменить бронь комнаты ${booking.room_id} на ${booking.start}`,
   );
+  cancel.addEventListener("click", () => cancelBooking(booking, cancel));
   return card;
 }
 
@@ -170,7 +189,7 @@ async function loadSchedule() {
   const query = new URLSearchParams({ date: day });
   if (ui.filter.value) query.set("room_id", ui.filter.value);
   try {
-    const bookings = await fetchJson(`/api/bookings?${query}`, controller.signal);
+    const bookings = await fetchJson(`/api/bookings?${query}`, { signal: controller.signal });
     if (!controller.signal.aborted) renderSchedule(bookings);
   } catch (error) {
     if (!controller.signal.aborted) showScheduleState("error");
@@ -190,6 +209,7 @@ async function initialize() {
     renderTimeOptions();
     ui.date.value ||= todayInTimezone(rules.timezone);
     ui.date.disabled = false;
+    ui.fields.disabled = false;
     ui.configLoading.hidden = true;
     await loadSchedule();
   } catch (error) {
@@ -200,9 +220,155 @@ async function initialize() {
   }
 }
 
+function controlsFor(name) {
+  return [...ui.form.elements].filter(control => control.name === name);
+}
+
+function clearFieldError(name) {
+  const feedback = [...document.querySelectorAll("[data-field-error]")]
+    .find(element => element.dataset.fieldError === name);
+  if (feedback) feedback.hidden = true;
+  for (const control of controlsFor(name)) {
+    control.classList.remove("is-invalid");
+    control.removeAttribute("aria-invalid");
+  }
+}
+
+function clearFormErrors() {
+  for (const feedback of document.querySelectorAll("[data-field-error]")) {
+    clearFieldError(feedback.dataset.fieldError);
+  }
+  ui.formError.hidden = true;
+}
+
+function showFormErrors(fields, message = "Проверьте выделенные поля.") {
+  let firstControl = null;
+  for (const feedback of document.querySelectorAll("[data-field-error]")) {
+    const name = feedback.dataset.fieldError;
+    if (!fields[name]) continue;
+    feedback.textContent = fields[name];
+    feedback.hidden = false;
+    for (const control of controlsFor(name)) {
+      control.classList.add("is-invalid");
+      control.setAttribute("aria-invalid", "true");
+      firstControl ||= control;
+    }
+  }
+  ui.formError.textContent = fields._form || message;
+  ui.formError.hidden = false;
+  (firstControl || ui.formError).focus();
+}
+
+function validateBooking(booking) {
+  const errors = {};
+  if (!booking.room_id) errors.room_id = "Выберите комнату.";
+  if (!booking.date || !ui.date.validity.valid) errors.date = "Укажите дату бронирования.";
+  for (const [name, limit] of [["organizer", 80], ["title", 120]]) {
+    if (!booking[name]) errors[name] = "Заполните поле.";
+    else if (booking[name].length > limit) errors[name] = `Не более ${limit} символов.`;
+  }
+  for (const name of ["start", "end"]) {
+    if (!booking[name]) errors[name] = "Выберите время.";
+  }
+  if (booking.start && booking.end && booking.end <= booking.start) {
+    errors.end = "Окончание должно быть позже начала.";
+  }
+  return errors;
+}
+
+function setSaving(value) {
+  saving = value;
+  ui.fields.disabled = value;
+  ui.date.disabled = value;
+  ui.form.setAttribute("aria-busy", String(value));
+  ui.submitSpinner.hidden = !value;
+  ui.submitLabel.textContent = value ? "Бронируем…" : "Забронировать";
+}
+
+async function submitBooking(event) {
+  event.preventDefault();
+  if (!rules || saving) return;
+  clearFormErrors();
+  ui.success.hidden = true;
+  ui.actionError.hidden = true;
+  const data = Object.fromEntries(new FormData(ui.form));
+  const booking = {
+    room_id: Number(data.room_id), date: data.date,
+    organizer: data.organizer.trim(), title: data.title.trim(),
+    start: data.start, end: data.end,
+  };
+  const errors = validateBooking(booking);
+  if (Object.keys(errors).length) {
+    showFormErrors(errors);
+    return;
+  }
+  setSaving(true);
+  let created;
+  try {
+    created = await fetchJson("/api/bookings", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(booking),
+    });
+  } catch (error) {
+    setSaving(false);
+    const message = error.status === 409 || error.status === 422
+      ? error.message
+      : "Не удалось получить подтверждение. Обновите расписание перед повторной отправкой: бронь могла сохраниться.";
+    showFormErrors(error.fields || {}, message);
+    return;
+  }
+  // reset() сбрасывает и дату в шапке: она тоже связана с этой формой.
+  ui.form.reset();
+  ui.date.value = created.date;
+  ui.filter.value = "";
+  lastCreatedId = created.id;
+  setSaving(false);
+  ui.success.textContent = `Бронь создана: комната ${created.room_id}, ${created.date}, ${created.start}–${created.end}.`;
+  ui.success.hidden = false;
+  controlsFor("room_id")[0]?.focus();
+  await loadSchedule();
+}
+
+async function cancelBooking(booking, button) {
+  if (cancelling.has(booking.id)) return;
+  cancelling.add(booking.id);
+  button.disabled = true;
+  button.textContent = "Отменяем…";
+  ui.success.hidden = true;
+  ui.actionError.hidden = true;
+  try {
+    await fetchJson(`/api/bookings/${booking.id}`, { method: "DELETE" });
+    ui.success.textContent = `Бронь отменена: комната ${booking.room_id}, ${booking.date}, ${booking.start}–${booking.end}.`;
+    ui.success.hidden = false;
+    if (document.activeElement === button) ui.filter.focus();
+    await loadSchedule();
+  } catch (error) {
+    ui.actionError.textContent = error.status === 404
+      ? "Эта бронь уже отменена. Расписание обновлено."
+      : "Не удалось отменить бронь. Повторите отмену или обновите расписание, чтобы проверить её состояние.";
+    ui.actionError.hidden = false;
+    ui.actionError.focus();
+    if (error.status === 404) await loadSchedule();
+  } finally {
+    cancelling.delete(booking.id);
+    // Карточка могла быть заменена обновлением расписания во время запроса.
+    const current = document.querySelector(`#meeting-${booking.id}`)?.closest("article").querySelector("button");
+    if (current) {
+      current.disabled = false;
+      current.textContent = "Отменить";
+    }
+  }
+}
+
 ui.date.addEventListener("change", loadSchedule);
 ui.filter.addEventListener("change", loadSchedule);
 ui.retry.addEventListener("click", loadSchedule);
 ui.configRetry.addEventListener("click", initialize);
-ui.form.addEventListener("submit", event => event.preventDefault());
+ui.form.addEventListener("submit", submitBooking);
+for (const target of [ui.form, ui.date]) {
+  target.addEventListener("input", event => {
+    clearFieldError(event.target.name);
+    if (event.target.name === "start") clearFieldError("end");
+  });
+}
 initialize();

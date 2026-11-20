@@ -18,7 +18,8 @@
         <div class="date-picker">
           <label class="form-label" for="booking-date">Дата бронирования</label>
           <input class="form-control" id="booking-date" name="date" type="date"
-                 form="booking-form" required disabled>
+                 form="booking-form" aria-describedby="date-error" required disabled>
+          <p class="field-error" id="date-error" data-field-error="date" hidden></p>
         </div>
       </div>
     </header>
@@ -35,47 +36,62 @@
         <p>Не удалось загрузить комнаты и правила бронирования. Попробуйте ещё раз.</p>
         <button class="btn btn-outline-danger" id="config-retry" type="button">Повторить</button>
       </div>
+      <p class="alert alert-success result-notice" id="action-success" role="status" hidden></p>
+      <p class="alert alert-danger result-notice" id="action-error" role="alert" tabindex="-1" hidden></p>
 
       <div class="booking-layout">
         <section class="card panel booking-panel" aria-labelledby="booking-heading">
           <div class="card-body">
             <h2 class="panel-title" id="booking-heading">Новая бронь</h2>
 
-            <form id="booking-form">
+            <form id="booking-form" novalidate>
+              <fieldset id="booking-fields" disabled>
               <fieldset class="field-group room-fieldset">
                 <legend class="form-label">Комната</legend>
                 <div class="room-picker" id="room-picker"></div>
+                <p class="field-error" id="room-error" data-field-error="room_id" hidden></p>
               </fieldset>
 
               <div class="field-group">
                 <label class="form-label" for="organizer">ФИО организатора</label>
                 <input class="form-control" id="organizer" name="organizer" type="text"
-                       placeholder="Иванов Иван Иванович" maxlength="80" autocomplete="name" required>
+                       placeholder="Иванов Иван Иванович" maxlength="80" autocomplete="name"
+                       aria-describedby="organizer-error" required>
+                <p class="field-error" id="organizer-error" data-field-error="organizer" hidden></p>
               </div>
 
               <div class="field-group">
                 <label class="form-label" for="meeting-title">Цель встречи</label>
                 <textarea class="form-control meeting-purpose" id="meeting-title" name="title"
-                          placeholder="Например, подготовка к семинару" maxlength="120" rows="2" required></textarea>
+                          placeholder="Например, подготовка к семинару" maxlength="120" rows="2"
+                          aria-describedby="title-error" required></textarea>
+                <p class="field-error" id="title-error" data-field-error="title" hidden></p>
               </div>
 
               <div class="period-fields field-group">
                 <div>
                   <label class="form-label" for="booking-start">Начало</label>
-                  <select class="form-select" id="booking-start" name="start" aria-describedby="booking-hours" required disabled>
+                  <select class="form-select" id="booking-start" name="start" aria-describedby="booking-hours start-error" required disabled>
                     <option value="" selected disabled>Выберите</option>
                   </select>
+                  <p class="field-error" id="start-error" data-field-error="start" hidden></p>
                 </div>
                 <div>
                   <label class="form-label" for="booking-end">Окончание</label>
-                  <select class="form-select" id="booking-end" name="end" aria-describedby="booking-hours" required disabled>
+                  <select class="form-select" id="booking-end" name="end" aria-describedby="booking-hours end-error" required disabled>
                     <option value="" selected disabled>Выберите</option>
                   </select>
+                  <p class="field-error" id="end-error" data-field-error="end" hidden></p>
                 </div>
               </div>
 
               <p class="form-text booking-hours" id="booking-hours"></p>
-              <button class="btn btn-primary booking-submit" type="button" disabled>Забронировать</button>
+              <div class="alert alert-danger" id="form-error" role="alert" tabindex="-1" hidden></div>
+              <button class="btn btn-primary booking-submit" id="booking-submit" type="submit">
+                <span class="spinner-border spinner-border-sm" id="submit-spinner" aria-hidden="true" hidden></span>
+                <span id="submit-label">Забронировать</span>
+              </button>
+              </fieldset>
             </form>
           </div>
         </section>
@@ -139,7 +155,7 @@
         <div class="card-body">
           <div class="booking-topline">
             <span class="badge room-badge"></span>
-            <button class="btn btn-outline-danger btn-sm" type="button" disabled>Отменить</button>
+            <button class="btn btn-outline-danger btn-sm" type="button">Отменить</button>
           </div>
           <div class="booking-details">
             <p class="booking-time"><time data-time="start"></time>–<time data-time="end"></time></p>

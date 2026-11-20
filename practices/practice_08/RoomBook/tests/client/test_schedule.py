@@ -6,7 +6,7 @@ from playwright.sync_api import expect
 from ..conftest import DAY
 
 
-def test_loads_rooms_rules_and_schedule(page, live_server, mocked_config):
+def test_loads_rooms_rules_and_schedule(page, live_server, mocked_config, capture):
     page.route("**/api/bookings**", lambda route: route.fulfill(json=live_server["bookings"]))
     page.goto(live_server["url"])
     expect(page.get_by_role("radio", name="Комната 101", exact=True)).to_be_visible()
@@ -36,7 +36,8 @@ def test_loads_rooms_rules_and_schedule(page, live_server, mocked_config):
         "17:00",
         "17:30",
     ]
-    expect(page.get_by_role("button", name="Забронировать", exact=True)).to_be_disabled()
+    expect(page.get_by_role("button", name="Забронировать", exact=True)).to_be_enabled()
+    capture("main.png")
 
 
 def test_filters_are_independent_from_form_and_update_count(page, live_server, mocked_config):
@@ -183,7 +184,7 @@ def test_reads_real_api(page, live_server):
 
 
 @pytest.mark.parametrize("width", [390, 1440, 2560])
-def test_layout_and_keyboard_navigation(page, live_server, mocked_config, width):
+def test_layout_and_keyboard_navigation(page, live_server, mocked_config, width, capture):
     page.set_viewport_size({"width": width, "height": 960})
     page.route("**/api/bookings**", lambda route: route.fulfill(json=live_server["bookings"]))
     page.goto(live_server["url"])
@@ -200,3 +201,5 @@ def test_layout_and_keyboard_navigation(page, live_server, mocked_config, width)
     expect(page.get_by_role("radio", name="Комната 102", exact=True)).to_be_checked()
     page.keyboard.press("Tab")
     expect(page.get_by_label("ФИО организатора")).to_be_focused()
+    if width == 390:
+        capture("mobile.png")

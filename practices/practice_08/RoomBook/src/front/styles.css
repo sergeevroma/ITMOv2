@@ -12,6 +12,8 @@
   --rb-secondary-soft: #f0f3f8;
   --rb-danger: #c93636;
   --rb-danger-border: #efc7c7;
+  --rb-success: #247547;
+  --rb-success-soft: #edf8f1;
   --rb-font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --rb-font-body: 1rem;
   --rb-font-label: 0.875rem;
@@ -281,6 +283,35 @@ body {
   width: 100%;
   min-height: 2.875rem;
   font-weight: 600;
+}
+
+.field-error {
+  margin: var(--rb-space-2) 0 0;
+  color: var(--rb-danger);
+  font-size: var(--rb-font-label);
+}
+
+.room-choice:has(input[aria-invalid="true"]) {
+  border-color: var(--rb-danger);
+}
+
+.alert {
+  overflow-wrap: anywhere;
+}
+
+.result-notice {
+  margin-bottom: var(--rb-space-6);
+}
+
+.alert-success {
+  --bs-alert-color: var(--rb-success);
+  --bs-alert-bg: var(--rb-success-soft);
+  --bs-alert-border-color: var(--rb-success);
+}
+
+.new-booking {
+  border-color: var(--rb-success);
+  background: var(--rb-success-soft);
 }
 
 .schedule-panel > .card-body {

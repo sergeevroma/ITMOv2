@@ -2,6 +2,7 @@ import socket
 import threading
 import time
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 import uvicorn
@@ -10,6 +11,22 @@ from fastapi.testclient import TestClient
 from roombook.main import create_app
 
 from ..conftest import DAY
+
+
+def pytest_addoption(parser):
+    parser.addoption("--evidence-dir", help="Сохранить скриншоты проверяемых состояний")
+
+
+@pytest.fixture
+def capture(page, request):
+    def save(name):
+        directory = request.config.getoption("--evidence-dir")
+        if directory:
+            target = Path(directory)
+            target.mkdir(parents=True, exist_ok=True)
+            page.screenshot(path=str(target / name), full_page=True, animations="disabled")
+
+    return save
 
 
 @pytest.fixture(scope="session")
