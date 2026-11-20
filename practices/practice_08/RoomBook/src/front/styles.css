@@ -48,6 +48,10 @@ body {
   line-height: 1.5;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .page-shell {
   width: 100%;
   max-width: 108rem;
@@ -187,6 +191,7 @@ body {
 
 .room-picker {
   display: grid;
+  min-height: 6.75rem;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--rb-space-2);
 }
@@ -388,6 +393,39 @@ body {
 .schedule-footer {
   margin-top: auto;
   padding-top: var(--rb-space-12);
+}
+
+.loading-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--rb-space-3);
+  margin-bottom: var(--rb-space-5);
+  color: var(--rb-muted);
+  font-size: var(--rb-font-label);
+}
+
+.state-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rb-space-3);
+  min-height: 18rem;
+  padding: var(--rb-space-6);
+  color: var(--rb-muted);
+  text-align: center;
+}
+
+.state-placeholder h3 {
+  margin: 0;
+  color: var(--rb-ink);
+  font-size: var(--rb-font-panel);
+  font-weight: 600;
+}
+
+.state-placeholder p {
+  margin: 0;
+  font-size: var(--rb-font-label);
 }
 
 .schedule-hint {
