@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Общее расписание учебных комнат RoomBook.">
+    <title>RoomBook — бронирование комнат</title>
+    <link rel="stylesheet" href="vendor/bootstrap.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Перейти к бронированию</a>
+
+    <header class="site-header">
+      <div class="page-shell header-content">
+        <span class="brand">RoomBook</span>
+        <div class="date-picker">
+          <label class="form-label" for="booking-date">Дата бронирования</label>
+          <input class="form-control" id="booking-date" name="date" type="date"
+                 form="booking-form" aria-describedby="date-error" required disabled>
+          <p class="field-error" id="date-error" data-field-error="date" hidden></p>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-shell main-content" id="main" tabindex="-1">
+      <h1 class="page-title">Бронирование комнат</h1>
+
+      <noscript><p class="alert alert-warning">Для загрузки расписания включите JavaScript в браузере.</p></noscript>
+      <p class="loading-notice" id="config-loading" role="status">
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        Загружаем комнаты и правила бронирования…
+      </p>
+      <div class="alert alert-danger" id="config-error" role="alert" hidden>
+        <p>Не удалось загрузить комнаты и правила бронирования. Попробуйте ещё раз.</p>
+        <button class="btn btn-outline-danger" id="config-retry" type="button">Повторить</button>
+      </div>
+      <p class="alert alert-success result-notice" id="action-success" role="status" hidden></p>
+      <p class="alert alert-danger result-notice" id="action-error" role="alert" tabindex="-1" hidden></p>
+
+      <div class="booking-layout">
+        <section class="card panel booking-panel" aria-labelledby="booking-heading">
+          <div class="card-body">
+            <h2 class="panel-title" id="booking-heading">Новая бронь</h2>
+
+            <form id="booking-form" novalidate>
+              <fieldset id="booking-fields" disabled>
+              <fieldset class="field-group room-fieldset">
+                <legend class="form-label">Комната</legend>
+                <div class="room-picker" id="room-picker"></div>
+                <p class="field-error" id="room-error" data-field-error="room_id" hidden></p>
+              </fieldset>
+
+              <div class="field-group">
+                <label class="form-label" for="organizer">ФИО организатора</label>
+                <input class="form-control" id="organizer" name="organizer" type="text"
+                       placeholder="Иванов Иван Иванович" maxlength="80" autocomplete="name"
+                       aria-describedby="organizer-error" required>
+                <p class="field-error" id="organizer-error" data-field-error="organizer" hidden></p>
+              </div>
+
+              <div class="field-group">
+                <label class="form-label" for="meeting-title">Цель встречи</label>
+                <textarea class="form-control meeting-purpose" id="meeting-title" name="title"
+                          placeholder="Например, подготовка к семинару" maxlength="120" rows="2"
+                          aria-describedby="title-error" required></textarea>
+                <p class="field-error" id="title-error" data-field-error="title" hidden></p>
+              </div>
+
+              <div class="period-fields field-group">
+                <div>
+                  <label class="form-label" for="booking-start">Начало</label>
+                  <select class="form-select" id="booking-start" name="start" aria-describedby="booking-hours start-error" required disabled>
+                    <option value="" selected disabled>Выберите</option>
+                  </select>
+                  <p class="field-error" id="start-error" data-field-error="start" hidden></p>
+                </div>
+                <div>
+                  <label class="form-label" for="booking-end">Окончание</label>
+                  <select class="form-select" id="booking-end" name="end" aria-describedby="booking-hours end-error" required disabled>
+                    <option value="" selected disabled>Выберите</option>
+                  </select>
+                  <p class="field-error" id="end-error" data-field-error="end" hidden></p>
+                </div>
+              </div>
+
+              <p class="form-text booking-hours" id="booking-hours"></p>
+              <div class="alert alert-danger" id="form-error" role="alert" tabindex="-1" hidden></div>
+              <button class="btn btn-primary booking-submit" id="booking-submit" type="submit">
+                <span class="spinner-border spinner-border-sm" id="submit-spinner" aria-hidden="true" hidden></span>
+                <span id="submit-label">Забронировать</span>
+              </button>
+              </fieldset>
+            </form>
+          </div>
+        </section>
+
+        <section class="card panel schedule-panel" id="schedule-panel" aria-labelledby="schedule-heading">
+          <div class="card-body">
+            <div class="schedule-title-row">
+              <h2 class="panel-title" id="schedule-heading">Расписание</h2>
+              <span class="badge booking-count" id="booking-count" role="status">—</span>
+            </div>
+            <div class="schedule-meta">
+              <p id="schedule-date">Дата не выбрана</p>
+              <p id="schedule-hours"></p>
+            </div>
+
+            <div class="schedule-filter">
+              <label class="form-label" for="schedule-room">Комната</label>
+              <select class="form-select" id="schedule-room" name="schedule_room" disabled>
+                <option value="" selected>Все комнаты</option>
+              </select>
+            </div>
+
+            <div class="state-placeholder" id="schedule-loading" role="status" hidden>
+              <span class="spinner-border" aria-hidden="true"></span>
+              <p>Загружаем расписание…</p>
+            </div>
+            <div class="state-placeholder" id="schedule-empty" role="status" hidden>
+              <h3 id="empty-title">Пока нет броней</h3>
+              <p id="empty-message"></p>
+            </div>
+            <div class="alert alert-danger" id="schedule-error" role="alert" hidden>
+              <p>Не удалось загрузить расписание. Проверьте соединение и повторите попытку.</p>
+              <button class="btn btn-outline-danger" id="schedule-retry" type="button">Повторить</button>
+            </div>
+            <div class="booking-list" id="booking-list" hidden></div>
+
+            <div class="schedule-footer" id="schedule-footer" hidden>
+              <div class="alert schedule-hint">
+                <p class="hint-title" id="schedule-hint-title"></p>
+                <p>Выберите комнату и свободный интервал в форме бронирования.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <template id="room-template">
+      <label class="room-choice">
+        <span class="room-name">
+          <input class="form-check-input" type="radio" name="room_id" required>
+          <span class="room-number"></span>
+        </span>
+        <span class="room-capacity"></span>
+        <span class="room-equipment"></span>
+      </label>
+    </template>
+
+    <template id="booking-template">
+      <article class="card schedule-booking">
+        <div class="card-body">
+          <div class="booking-topline">
+            <span class="badge room-badge"></span>
+            <button class="btn btn-outline-danger btn-sm" type="button">Отменить</button>
+          </div>
+          <div class="booking-details">
+            <p class="booking-time"><time data-time="start"></time>–<time data-time="end"></time></p>
+            <div>
+              <h3 class="meeting-organizer"></h3>
+              <p class="meeting-description"></p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </template>
+  </body>
+</html>
