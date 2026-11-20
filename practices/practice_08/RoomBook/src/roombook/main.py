@@ -83,8 +83,7 @@ def create_app(
         return error_response(422, "validation_error", "Проверьте введённые данные.", fields)
 
     application.include_router(build_router(service))
-    # Фронтенд появится после макета. Его можно будет запускать с API на одном адресе.
-    frontend = Path(frontend_dir) if frontend_dir is not None else PROJECT_ROOT / "frontend"
+    frontend = Path(frontend_dir) if frontend_dir is not None else PROJECT_ROOT / "src" / "front"
     if frontend_dir is not None or frontend.is_dir():
         application.mount("/", StaticFiles(directory=frontend, html=True), name="frontend")
     return application

@@ -1,4 +1,5 @@
 import json
+import re
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Barrier
@@ -45,6 +46,22 @@ def test_exported_openapi_matches_application(client):
     path = Path(__file__).resolve().parents[1] / "docs" / "openapi.json"
     assert client.get("/openapi.json").json() == json.loads(path.read_text(encoding="utf-8"))
     assert client.get("/docs").status_code == 200
+
+
+def test_default_frontend_serves_local_styles_and_preserves_api(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "Бронирование комнат" in response.text
+    stylesheets = re.findall(r'<link rel="stylesheet" href="([^"]+)">', response.text)
+    assert stylesheets
+    for stylesheet in stylesheets:
+        assert not stylesheet.startswith(("http:", "https:", "//"))
+        asset = client.get(f"/{stylesheet}")
+        assert asset.status_code == 200
+        assert "text/css" in asset.headers["content-type"]
+    assert len(client.get("/api/rooms").json()) == 3
+    assert client.get("/api/bookings", params={"date": DAY}).json() == []
 
 
 def test_malformed_json_has_a_form_error(client):
