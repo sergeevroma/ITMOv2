@@ -1,0 +1,415 @@
+{
+  "name": "Practice 7",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $json.body.pull_request.base.repo.full_name }}/pulls/{{ $json.body.number }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3.diff"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "8f483b0e-110a-41db-80d3-3e7d0bfa8a45",
+      "name": "Get file's PR info",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        336,
+        -112
+      ],
+      "typeVersion": 4.2,
+      "notesInFlow": true,
+      "credentials": {
+        "githubApi": {
+          "id": "kOkBbs15zQ34Z2P1",
+          "name": "GitHub account 27"
+        }
+      },
+      "notes": "Getting diff file of PR"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $json.body.pull_request.head.repo.full_name }}/readme",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "ref",
+              "value": "={{ $json.body.pull_request.head.sha }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.raw+json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "outputPropertyName": "readme"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        336,
+        96
+      ],
+      "id": "4d84e9e0-a02a-4373-90c9-7de709eb0d85",
+      "name": "Get README",
+      "notesInFlow": true,
+      "credentials": {
+        "githubApi": {
+          "id": "kOkBbs15zQ34Z2P1",
+          "name": "GitHub account 27"
+        }
+      },
+      "notes": "Getting README  for context"
+    },
+    {
+      "parameters": {
+        "owner": {
+          "__rl": true,
+          "value": "sergeevroma",
+          "mode": "list",
+          "cachedResultName": "sergeevroma",
+          "cachedResultUrl": "https://github.com/sergeevroma"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "N8N_practice",
+          "mode": "list",
+          "cachedResultName": "N8N_practice",
+          "cachedResultUrl": "https://github.com/sergeevroma/N8N_practice"
+        },
+        "events": [
+          "pull_request"
+        ],
+        "options": {}
+      },
+      "id": "e7e67843-e4b2-4224-bacb-887f47bbb622",
+      "name": "PR Trigger",
+      "type": "n8n-nodes-base.githubTrigger",
+      "position": [
+        -288,
+        0
+      ],
+      "webhookId": "c6a30e53-bda5-4922-87f3-8cdfb399a35f",
+      "notesInFlow": true,
+      "typeVersion": 1,
+      "credentials": {
+        "githubApi": {
+          "id": "kOkBbs15zQ34Z2P1",
+          "name": "GitHub account 27"
+        }
+      },
+      "notes": "PR trigger to sergeevroma/N8N_practice repo"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        576,
+        0
+      ],
+      "id": "00a813ef-1c25-4b92-891d-de716a5fd40e",
+      "name": "Merge",
+      "notesInFlow": true,
+      "notes": "Union data into single json"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "openai/gpt-5",
+          "mode": "list",
+          "cachedResultName": "openai/gpt-5"
+        },
+        "options": {}
+      },
+      "id": "a342917f-1536-40cf-8368-c48d6f8c5cb0",
+      "name": "VSELLM_GPT_5",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        736,
+        208
+      ],
+      "typeVersion": 1.2,
+      "credentials": {
+        "openAiApi": {
+          "id": "QH3ktrYvS9j0dPQv",
+          "name": "VseLLM"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Ты senior Python-разработчик.\n\nПроведи code review изменений в diff, учитывая требования из README.\nREADME и неизменённые строки используй для понимания контекста.\nЗамечания оставляй только к проблемам, внесённым изменениями PR.\n\nНайди:\n- баги;\n- проблемы безопасности;\n- регрессии;\n- проблемы производительности;\n- нарушения best practices.\n\nДля каждого замечания укажи файл, проблемную изменённую строку,\nпоследствия ошибки и конкретный пример исправления.\n\nНе придумывай требования, которых нет в предоставленном контексте.\nЕсли проблем не найдено, сообщи об этом.\n\nREADME:\n<readme>\n{{ $json.readme }}\n</readme>\n\nDIFF:\n<diff>\n{{ $json.data }}\n</diff>",
+        "options": {
+          "systemMessage": ""
+        }
+      },
+      "id": "96f4ad7f-9009-4f57-83ac-38dd8ef75209",
+      "name": "Diff review agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        768,
+        0
+      ],
+      "typeVersion": 1.9
+    },
+    {
+      "parameters": {
+        "resource": "review",
+        "owner": {
+          "__rl": true,
+          "value": "sergeevroma",
+          "mode": "list",
+          "cachedResultName": "sergeevroma",
+          "cachedResultUrl": "https://github.com/sergeevroma"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "N8N_practice",
+          "mode": "list",
+          "cachedResultName": "N8N_practice",
+          "cachedResultUrl": "https://github.com/sergeevroma/N8N_practice"
+        },
+        "pullRequestNumber": "={{ $('PR Trigger').first().json.body.number }}",
+        "event": "comment",
+        "body": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "id": "c862b9dd-8b78-4c96-8124-c7e184baa2d7",
+      "name": "GitHub Robot",
+      "type": "n8n-nodes-base.github",
+      "position": [
+        1136,
+        0
+      ],
+      "webhookId": "4392c85d-31e9-4ebd-8f4d-d556cbb8f3e0",
+      "typeVersion": 1.1,
+      "credentials": {
+        "githubApi": {
+          "id": "kOkBbs15zQ34Z2P1",
+          "name": "GitHub account 27"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "edit",
+        "owner": {
+          "__rl": true,
+          "value": "sergeevroma",
+          "mode": "list",
+          "cachedResultName": "sergeevroma",
+          "cachedResultUrl": "https://github.com/sergeevroma"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "N8N_practice",
+          "mode": "list",
+          "cachedResultName": "N8N_practice",
+          "cachedResultUrl": "https://github.com/sergeevroma/N8N_practice"
+        },
+        "issueNumber": "={{ $('PR Trigger').first().json.body.number }}",
+        "editFields": {
+          "labels": [
+            {
+              "label": "ReviewedByAI"
+            }
+          ]
+        }
+      },
+      "id": "6261e811-3950-473a-8275-7aa610992f7e",
+      "name": "Add Label to PR",
+      "type": "n8n-nodes-base.github",
+      "position": [
+        1360,
+        0
+      ],
+      "webhookId": "70d2db56-965b-4f1f-817c-1fbb311320c0",
+      "typeVersion": 1,
+      "credentials": {
+        "githubApi": {
+          "id": "kOkBbs15zQ34Z2P1",
+          "name": "GitHub account 27"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "c7bc05b2-b959-40c7-9880-b6acf8d28ab3",
+              "leftValue": "={{ $json.body.action }}",
+              "rightValue": "opened",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        -64,
+        0
+      ],
+      "id": "4a496bed-fb96-407b-804f-0fe1f72c048f",
+      "name": "If",
+      "notesInFlow": true,
+      "notes": "Учитываем только открытие PR"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get file's PR info": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get README": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "PR Trigger": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Diff review agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VSELLM_GPT_5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Diff review agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Diff review agent": {
+      "main": [
+        [
+          {
+            "node": "GitHub Robot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub Robot": {
+      "main": [
+        [
+          {
+            "node": "Add Label to PR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Get file's PR info",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get README",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ea70aeee-979a-43a0-b579-811ece2f6432",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "68dbbb4e8fa686c3fd4e9982ade6836edb66976f207553e7ac22df961581c78c"
+  },
+  "nodeGroups": [],
+  "id": "ddzwxQLZaNU2u2ZS",
+  "tags": []
+}
