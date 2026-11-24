@@ -1,0 +1,111 @@
+Контрольная поломка во временной копии: скрыто сообщение ошибки формы.
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_save_error_preserves_input_and_allows_retry[chromium-conflict] ______
+tests/client/test_booking_flow.py:196: in test_save_error_preserves_input_and_allows_retry
+    expect(page.locator("#form-error")).to_be_visible()
+E   AssertionError: Locator expected to be visible
+E   Actual value: hidden 
+E   Call log:
+E     - Expect "to_be_visible" locator("#form-error") with timeout 5000ms
+E     - waiting for locator("#form-error")
+E       14 × locator resolved to <div hidden="" role="alert" tabindex="-1" id="form-error" class="alert alert-danger">Комната уже занята.</div>
+E          - unexpected value "hidden"
+E   
+E   Aria snapshot:
+E   - link "Перейти к бронированию":
+E     - /url: "#main"
+E   - banner:
+E     - text: RoomBook Дата бронирования
+E     - textbox "Дата бронирования": 2027-03-15
+E   - main:
+E     - heading "Бронирование комнат" [level=1]
+E     - region "Новая бронь":
+E       - heading "Новая бронь" [level=2]
+E       - group:
+E         - group "Комната":
+E           - text: Комната
+E           - radio "Комната 101"
+E           - text: "101 Мест: 4 Маркерная доска"
+E           - radio "Комната 102" [checked]
+E           - text: "102 Мест: 8 Маркерная доска, Экран"
+E           - radio "Комната 103"
+E           - text: "103 Мест: 12 Маркерная доска, Проектор"
+E         - text: ФИО организатора
+E         - textbox "ФИО организатора":
+E           - /placeholder: Иванов Иван Иванович
+E           - text: Мария Петрова
+E         - text: Цель встречи
+E         - textbox "Цель встречи":
+E           - /placeholder: Например, подготовка к семинару
+E           - text: Подготовка доклада
+E         - text: Начало
+E         - combobox "Начало":
+E           - option "Выберите" [disabled]
+E           - option "09:00"
+E           - option "09:30"
+E           - option "10:00"
+E           - option "10:30"
+E           - option "11:00"
+E           - option "11:30"
+E           - option "12:00" [selected]
+E           - option "12:30"
+E           - option "13:00"
+E           - option "13:30"
+E           - option "14:00"
+E           - option "14:30"
+E           - option "15:00"
+E           - option "15:30"
+E           - option "16:00"
+E           - option "16:30"
+E           - option "17:00"
+E           - option "17:30"
+E         - text: Окончание
+E         - combobox "Окончание":
+E           - option "Выберите" [disabled]
+E           - option "09:30"
+E           - option "10:00"
+E           - option "10:30"
+E           - option "11:00"
+E           - option "11:30"
+E           - option "12:00"
+E           - option "12:30"
+E           - option "13:00" [selected]
+E           - option "13:30"
+E           - option "14:00"
+E           - option "14:30"
+E           - option "15:00"
+E           - option "15:30"
+E           - option "16:00"
+E           - option "16:30"
+E           - option "17:00"
+E           - option "17:30"
+E           - option "18:00"
+E         - paragraph: С 09:00 до 18:00, интервал — 30 минут.
+E         - button "Забронировать"
+E     - region "Расписание":
+E       - heading "Расписание" [level=2]
+E       - status: 1 бронь
+E       - paragraph: Понедельник, 15 марта
+E       - paragraph: 09:00–18:00
+E       - text: Комната
+E       - combobox "Комната":
+E         - option "Все комнаты" [selected]
+E         - option "Комната 101"
+E         - option "Комната 102"
+E         - option "Комната 103"
+E       - article "Олег Иванов":
+E         - text: Комната 102
+E         - button "Отменить бронь комнаты 102 на 12:00": Отменить
+E         - paragraph:
+E           - time: 12:00
+E           - text: –
+E           - time: 13:00
+E         - heading "Олег Иванов" [level=3]
+E         - paragraph: Консультация
+E       - paragraph: В остальное время комнаты свободны
+E       - paragraph: Выберите комнату и свободный интервал в форме бронирования.
+=========================== short test summary info ============================
+FAILED tests/client/test_booking_flow.py::test_save_error_preserves_input_and_allows_retry[chromium-conflict]
+1 failed, 21 deselected in 5.78s
+Ожидаемое падение подтверждено. Рабочий исходник не изменялся.
